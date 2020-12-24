@@ -1,0 +1,18 @@
+{
+    "INVALID_PARAMS_NUMBER_TITLE": "Nombre de paramètres invalides",
+    "INVALID_PARAMS_NUMBER_DESCRIPTION": "Il y a trop ou pas assez de paramètres, vous devez en fournir un ou deux (<dest> ou <origin> --> <dest>)",
+    "ONLY_DESTINATION_BUT_NOT_CONNECTED_TITLE": "Utilisation incorrecte",
+    "ONLY_DESTINATION_BUT_NOT_CONNECTED_DESCRIPTION": "Vous devez être connecté en vocal si vous passez uniquement une destination en paramètre",
+    "CURRENT_DESTINATION_BUT_NOT_CONNECTED_TITLE": "Utilisation incorrecte",
+    "CURRENT_DESTINATION_BUT_NOT_CONNECTED_DESCRIPTION": "Vous avez spécifié le channel courant en paramètres, mais vous n'êtes pas connecté en vocal",
+    "CHANNELS_NOT_FOUND_TITLE": "Channels non trouvés",
+    "CHANNELS_NOT_FOUND_DESCRIPTION": "Un ou plusieurs channels n'ont pas été trouvés : {{{notFoundChannels}}}",
+    "SAME_ORIGIN_AND_DESTINATION_TITLE": "Origine et destination identiques",
+    "SAME_ORIGIN_AND_DESTINATION_DESCRIPTION": "Les channels d'origine et de destination sont identiques : aucune action n'a été réalisée",
+    "NO_USER_TO_MOVE_TITLE": "Aucune personne à déplacer",
+    "NO_USER_TO_MOVE_DESCRIPTION": "Il n'y a aucune personne à déplacer depuis le channel d'origine",
+    "UNKNOWN_MOVE_ERROR_TITLE": "Erreur inconnue",
+    "UNKNOWN_MOVE_ERROR_DESCRIPTION": "Une erreur s'est produite durant le déplacement de {{{memberDisplayName}}} ! Contactez un admin...",
+    "MASSMOVE_SUCCESSFUL_TITLE": "{{{nbMovedUsers}}} utilisateur{{{pluralUsers}}} déplacé{{{pluralUsers}}} avec succès",
+    "MASSMOVE_SUCCESSFUL_DESCRIPTION": "Déplacement effectué depuis \"{{{originChannel}}}\" vers \"{{{destinationChannel}}}\" !"
+}

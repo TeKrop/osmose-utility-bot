@@ -1,0 +1,23 @@
+{
+  "name": "osmose-utility-bot",
+  "version": "1.0.0",
+  "description": "Osmose Utility Bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Valentin PORCHET",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^12.5.1",
+    "emoji-regex": "^9.2.0",
+    "mustache": "^4.1.0",
+    "winston": "^3.3.3",
+    "winston-daily-rotate-file": "^4.5.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.15.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1"
+  }
+}

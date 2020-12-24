@@ -93,7 +93,7 @@ node index.js
 ```
 ## 👨‍💻 Technical details
 
-For code syntax and style, I'm using **Airbnb JS Style Guide** (https://github.com/airbnb/javascript). I'm using **Discord.js** framework, **emoji-regex** in order to be able to parse emojis, **mustache** for simple templating when displaying messages, and **winston** for logging.
+For code syntax and style, I'm using **Airbnb JS Style Guide** (https://github.com/airbnb/javascript). I'm using **Discord.js** library, **emoji-regex** in order to be able to parse emojis, **mustache** for simple templating when displaying messages, and **winston** for logging.
 
 ## 🤝 Contributing
 

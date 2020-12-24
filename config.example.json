@@ -1,0 +1,169 @@
+{
+    "prefix": "!",
+    "token": "your-bot-token-goes-here",
+    "logger": {
+        "enableLogs": true,
+        "logLevel": "info",
+        "logPath": "./logs",
+        "logFilename": "osmose-utility-bot-%DATE%.log",
+        "zipLogs": true
+    },
+    "commands": {
+        "chan": {
+            "channel": "123456789",
+            "exceptionChannels": [
+                "123456789",
+                "987654321"
+            ],
+            "timeout": 86400000,
+            "limit": 10,
+            "moveUserInCreatedChannel": false
+        },
+        "massmove": {
+            "channel": "123456789",
+            "currentChannelAlias": "here"
+        },
+        "owchan": {
+            "channel": "123456789",
+            "parentCategory": "123456789",
+            "timeout": 3600000,
+            "bitrate": 64000,
+            "moveUserInCreatedChannel": true
+        },
+        "watcher": {
+            "guildMemberRemoveChannel": "123456789",
+            "guildMemberAddChannel": "123456789",
+            "specialInvites": {
+                "AjPdna": "Lien public"
+            },
+            "guildMemberUpdateChannel": "123456789",
+            "userUpdateChannel": "123456789",
+            "exceptionUsers": [
+                "123456789"
+            ],
+            "memberUpdateMessages": [
+                "Quoi, **{{{A}}}** évolue ?... Félicitations, **{{{A}}}** est devenu **{{{B}}}** !",
+                "Changement d'identité No Jutsu ! Tu croyais qu'on ne te verrait pas **{{{B}}}**, ou devrais-je dire... **{{{A}}}** ! :p",
+                "BIP BOP - Changement de pseudonyme détecté, analyse en cours... **{{{A}}}** est désormais connu en tant que **{{{B}}}** ! Fin du rapport - BIP BOP"
+            ],
+            "memberLeavedMessages": [
+                "J'ai le regret de vous annoncer que {{{X}}} vient de quitter le serveur.",
+                "Le doigt de {{{X}}} a glissé... Faut-il le réinviter ?",
+                "⚠️ {{{X}}} a réussi à s'enfuir ! Une révision du système de sécurité s'impose.",
+                "Devinez qui vient de quitter le serveur ? C'est {{{X}}} !",
+                "Alors comme ça, {{{X}}} nous a quittés ? Pas cool 😢",
+                "Qu'est-ce qui a bien pu pousser {{{X}}} à s'en aller ?",
+                "{{{X}}} a décidé de changer d'horizon, souhaitons-lui bonne chance dans le monde réel.",
+                "Petite minute de silence pour {{{X}}} qui nous a quittés.",
+                "On ne fait pas toujours les bons choix dans la vie. Pas vrai, {{{X}}} ?"
+            ],
+            "memberKickedMessages": [
+                "{{{X}}} nous manquera beaucoup... C'était qui, déjà ?",
+                "Vraisemblablement, quelqu'un n'était pas très fan de {{{X}}}.",
+                "L'activité de {{{X}}} était probablement insuffisante.",
+                "Qui sait, {{{X}}} se fera peut-être réinviter !",
+                "Ça vous dit quelque chose, {{{X}}} ?",
+                "Allez, c'est juste un kick, {{{X}}} s'en remettra !",
+                "Vous êtes sûrs que {{{X}}} ne mérite pas plutôt un ban ?",
+                "Espérons que le sacrifice de {{{X}}} ne sera pas vain.",
+                "Virer {{{X}}}, c'est fait. Au suivant !"
+            ],
+            "memberBannedMessages": [
+                "Nom de l'utilisateur : {{{X}}}"
+            ],
+            "adminUserUrl": "https://www.myadminwebsite.com/discordMember/{{{memberUserId}}}"
+        }
+    },
+    "customStatus": {
+        "list": {
+            "LISTENING": [
+                "vos conversations 🕵️‍♂️",
+                "de la musique 🎵",
+                "les autres bots 🤖",
+                "un débat sur le prix d'Overwatch 2",
+                "des musiques de jeux vidéo",
+                "des musiques de {{{GAME}}}",
+                "la bande originale des Gardiens de la galaxie",
+                "la bande originale de {{{MOVIE}}}",
+                "un podcast et commence à s'endormir",
+                "un podcast sur le développement personnel",
+                "{{{MEMBER}}} chanter sous la douche",
+                "les meilleures chansons de {{{MEMBER}}}",
+                "les revendications de {{{MEMBER}}}"
+            ],
+            "WATCHING": [
+                "{{{MEMBER}}} faire des trucs",
+                "{{{MEMBER}}} préparer des cookies",
+                "les POTG de {{{MEMBER}}}",
+                "{{{ADMIN}}} supprimer les GIF",
+                "{{{ADMIN}}} renommer les chans furtivement 🐱‍👤",
+                "{{{MOVIE}}}",
+                "des photos de {{{MEMBER}}}",
+                "des photos de {{{ANIMAL}}}",
+                "des vidéos de {{{MEMBER}}}",
+                "un TedTalk sur le sens de la vie",
+                "un tutoriel sur le macramé",
+                "un tutoriel pour réécrire son code",
+                "un tutoriel sur {{{GAME}}}",
+                "une review de {{{MOVIE}}}",
+                "une review de {{{GAME}}}",
+                "les fauteuils gamer sur Amazon",
+                "{{{MEMBER}}} se faire une raclette 🧀",
+                "des trucs NSFW"
+            ],
+            "PLAYING": [
+                "indexer les messages 📄",
+                "se faire passer pour un humain",
+                "Apex Legends et fait des glissades",
+                "Apex en duo, mais avec qui ?",
+                "CS GO contre d'autres bots",
+                "Skribbl mais ne sait pas dessiner :(",
+                "Skribbl mais les humains sont nuls :(",
+                "Skribbl mais les humains font trop de fautes !",
+                "assassiner des gens dans le tout dernier Assassin's Creed",
+                "TFT et ne comprend rien aux nouvelles classes",
+                "Warframe parce que c'est grave cool",
+                "{{{GAME}}} 🎮",
+                "rien et s'ennuie",
+                "1, 2, 3, soleil 🌞"
+            ],
+            "STREAMING": [
+                "{{{GAME}}} 🎮"
+            ],
+            "COMPETING": [
+                "{{{GAME}}} 🎮"
+            ]
+        },
+        "games": [
+            "Overwatch 2",
+            "Borderlands 3",
+            "TFT",
+            "Cyberpunk 2077",
+            "Assassin's Creed",
+            "Apex Legends",
+            "Tabletop Simulator"
+        ],
+        "movies": [
+            "Star Wars",
+            "Indiana Jones",
+            "Avengers",
+            "Iron Man",
+            "Tenet"
+        ],
+        "animals": [
+            "chats",
+            "chiens",
+            "lamas",
+            "dauphins",
+            "girafes",
+            "langoustes",
+            "pandas",
+            "kangourous"
+        ],
+        "membersRoles": [
+            "123456789"
+        ],
+        "adminRole": "123456789",
+        "timeInterval": 1800000
+    }
+}

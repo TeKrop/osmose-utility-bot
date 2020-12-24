@@ -1,0 +1,20 @@
+{
+    "PARENT_CATEGORY_NOT_FOUND": "Parent category not found for onBotReady...",
+    "INVALID_USERS_LIMIT_TITLE": "Limite max d'utilisateurs invalide",
+    "INVALID_USERS_LIMIT_DESCRIPTION": "La limite spécifiée est invalide : vous devez préciser un nombre entre 1 et 99 inclus",
+    "CHANNEL_LIMITED_TO_X_USERS": "Il est limité à {{{userLimit}}} utilisateurs en simultané.",
+    "CHANNEL_NAME_NOT_SPECIFIED_TITLE" : "Nom de channel non spécifié",
+    "CHANNEL_NAME_NOT_SPECIFIED_DESCRIPTION": "Vous devez spécifier un nom pour le nouveau channel à créer",
+    "CHANNEL_NAME_TOO_LONG_TITLE": "Nom de channel incorrect",
+    "CHANNEL_NAME_TOO_LONG_DESCRIPTION": "Le nom du nouveau channel doit comporter entre 1 et 100 caractères",
+    "CHANNEL_LIMIT_RESTRICTION_TITLE": "Impossible de créer un nouveau chan, la limite autorisée a été atteinte",
+    "CHANNEL_LIMIT_RESTRICTION_DESCRIPTION": "Le nombre maximum de channels autorisés en simultané a été atteint ({{{chanLimit}}})",
+    "CHANNEL_CREATED_AND_MOVED_TITLE": "Channel créé avec succès !",
+    "CHANNEL_CREATED_AND_MOVED_DESCRIPTION": "Le channel \"{{{newVoiceChannelName}}}\" a été créé et vous avez été déplacé dedans avec succès ! {{{limitMessage}}}",
+    "CHANNEL_CREATED_BUT_MOVE_ERROR_TITLE": "Channel créé mais erreur de déplacement",
+    "CHANNEL_CREATED_BUT_MOVE_ERROR_DESCRIPTION": "Channel créé mais une erreur s'est produite durant votre déplacement dans le channel ! Contactez un admin...",
+    "CHANNEL_CREATED_TITLE": "Channel créé avec succès !",
+    "CHANNEL_CREATED_DESCRIPTION": "Le channel \"{{{newVoiceChannelName}}}\" a été créé avec succès ! {{{limitMessage}}}",
+    "CHANNEL_CREATION_UNKNOWN_ERROR_TITLE": "Erreur inconnue",
+    "CHANNEL_CREATION_UNKNOWN_ERROR_DESCRIPTION": "Une erreur s'est produite durant la création du channel ! Contactez un admin..."
+}

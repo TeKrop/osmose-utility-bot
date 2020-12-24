@@ -1,0 +1,12 @@
+{
+    "USER_INVITED_BY_UNKNOWN": "Il a été invité par une puissance supérieure.",
+    "USER_INVITED_BY_SPECIAL_INVITE": "Il est arrivé à l'aide de l'invitation **{{{specialInvite}}}**.",
+    "USER_INVITED_BY_INVITER": "Il a été invité par **{{{inviter}}}**.",
+    "NEW_USER_JOINED_SERVER_TITLE": "Un nouvel utilisateur vient de rejoindre le serveur",
+    "NEW_USER_JOINED_SERVER_DESCRIPTION": "Nom de l'utilisateur : {{{displayName}}} ({{{userTag}}}). {{{userOrigin}}}",
+    "USER_LEAVED_SERVER": "Un utilisateur vient de quitter le serveur",
+    "USER_WAS_KICKED_BY_USER": "Un utilisateur vient de se faire kick par {{{executor}}}",
+    "USER_WAS_BANNED_BY_USER": "Un utilisateur vient de se faire ban par {{{executor}}}",
+    "USER_CHANGED_HIS_USERNAME": "Un utilisateur vient de changer de pseudonyme",
+    "USER_CHANGED_HIS_DISCORD_TAG": "Un utilisateur vient de changer de DiscordTag"
+}
