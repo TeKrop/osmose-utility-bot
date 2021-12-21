@@ -8,23 +8,23 @@ module.exports = {
   error(channel, data) {
     return this.message(channel, Object.assign(data, {
       title: Mustache.render(Constants.ERROR_MESSAGE, { title: data.title }),
-      color: '#ff0000',
+      color: 'RED',
     }));
   },
   warn(channel, data) {
     return this.message(channel, Object.assign(data, {
       title: Mustache.render(Constants.WARNING_MESSAGE, { title: data.title }),
-      color: '#ff8c00',
+      color: 'ORANGE',
     }));
   },
   info(channel, data) {
     return this.message(channel, Object.assign(data, {
-      color: '#0000cc',
+      color: 'DARK_BLUE',
     }));
   },
   success(channel, data) {
     return this.message(channel, Object.assign(data, {
-      color: '#007f00',
+      color: 'DARK_GREEN',
     }));
   },
   message(channel, data) {
@@ -38,10 +38,12 @@ module.exports = {
     Logger.info(`message - ${data.title}`);
     Logger.info(`message - ${data.description}`);
 
-    return channel.send(new Discord.MessageEmbed()
+    const embed = new Discord.MessageEmbed()
       .setColor(data.color)
       .setTitle(data.title)
       .setDescription(data.description)
-      .setURL(data.url ? data.url : ''));
+      .setURL(data.url ? data.url : '');
+
+    return channel.send({ embeds: [embed] });
   },
 };

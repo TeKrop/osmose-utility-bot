@@ -20,7 +20,7 @@ module.exports = {
   adminUserUrl: '',
   invites: null,
   onBotReady(client) {
-    const guild = client.guilds.cache.array()[0];
+    const guild = client.guilds.cache.first();
     const that = this;
 
     if (typeof Config.commands.watcher.guildMemberRemoveChannel !== 'undefined') {
@@ -91,7 +91,7 @@ module.exports = {
     // wait for additionnal 1s before initializing
     setTimeout(() => {
       Logger.info('watcher - Fetching guild invites...');
-      guild.fetchInvites().then((guildInvites) => {
+      guild.invites.fetch().then((guildInvites) => {
         that.invites = guildInvites;
         Logger.verbose(`watcher - ${JSON.stringify(that.invites)}`);
       });
@@ -103,12 +103,12 @@ module.exports = {
       return;
     }
 
-    const guild = client.guilds.cache.array()[0];
+    const guild = client.guilds.cache.first();
 
     Logger.info('watcher - An new user joined the server...');
 
     // To compare, we need to load the current invite list.
-    guild.fetchInvites().then((guildInvites) => {
+    guild.invites.fetch().then((guildInvites) => {
       Logger.verbose(`watcher - ${JSON.stringify(guildInvites)}`);
 
       // This is the *existing* invites for the guild.
@@ -169,7 +169,7 @@ module.exports = {
           });
         } else if (invite.inviter) {
           // else, search if we have a specific inviter
-          const inviter = guild.member(invite.inviter);
+          const inviter = guild.members.cache.get(invite.inviter.id);
           if (inviter) {
             userOrigin = Mustache.render(Constants.USER_INVITED_BY_INVITER, {
               inviter: inviter.displayName,
@@ -197,7 +197,7 @@ module.exports = {
       return;
     }
 
-    const guild = client.guilds.cache.array()[0];
+    const guild = client.guilds.cache.first();
 
     let messageTitle = Constants.USER_LEAVED_SERVER;
     let descriptions = this.memberLeavedMessages;
@@ -210,7 +210,7 @@ module.exports = {
         && log.target.id === member.user.id
         && deleteActions.indexOf(log.action) !== -1);
 
-      if (logs.array().length > 0) {
+      if (logs.size > 0) {
         const now = Date.now();
 
         // check if we have at least one log in the last 5 seconds
@@ -309,7 +309,7 @@ module.exports = {
     const randMessageNum = Math.floor(Math.random() * this.memberUpdateMessages.length);
 
     if (this.guildMemberUpdateChannel !== null) {
-      const guild = client.guilds.cache.array()[0];
+      const guild = client.guilds.cache.first();
       const guildMember = guild.members.resolve(newUser);
       if (guildMember.displayName === newUser.username) {
         // send a message to the configured channel
@@ -336,4 +336,22 @@ module.exports = {
       });
     }
   },
+  onInviteCreate(client, invite) {
+    // if the invite is already in the list, do nothing
+    if (this.invites.has(invite.code)) {
+      return;
+    }
+    Logger.info(`watcher - Adding a new invite to the list (${invite.code})`);
+    Logger.verbose(`watcher - ${JSON.stringify(invite)})`);
+    this.invites.set(invite.code, invite);
+  },
+  onInviteDelete(client, invite) {
+    // if the invite is not in the list, do nothing
+    if (!this.invites.has(invite.code)) {
+      return;
+    }
+    Logger.info(`watcher - Deleting an invite from the list (${invite.code})`);
+    Logger.verbose(`watcher - ${JSON.stringify(invite)})`);
+    this.invites.delete(invite.code);
+  }
 };

@@ -18,16 +18,18 @@ module.exports = {
   },
   createdChannels: [],
   channelsTimeouts: [],
-  onBotReady(client) {
+  async onBotReady(client) {
     const that = this;
-    const guild = client.guilds.cache.array()[0];
+    const guild = client.guilds.cache.first();
+    Logger.verbose(guild)
 
     // determine parent category : if not in config, search
     // for parent category of the targetted text channel
     if (typeof Config.commands.chan.parentCategory !== 'undefined') {
       this.parentCategory = guild.channels.cache.get(Config.commands.chan.parentCategory);
     } else if (Config.commands.chan.channel && Config.commands.chan.channel.length > 0) {
-      const textChannel = guild.channels.cache.get(Config.commands.chan.channel);
+      //const textChannel = guild.channels.cache.get(Config.commands.chan.channel);
+      const textChannel = await guild.channels.fetch(Config.commands.chan.channel);
       if (textChannel !== null) {
         this.parentCategory = textChannel.parent;
       }
@@ -68,8 +70,10 @@ module.exports = {
 
     // put the same permissions as the parent category
     this.defaultChannelOptions.parent = this.parentCategory.id;
-    this.defaultChannelOptions.permissionOverwrites = this.parentCategory.permissionOverwrites.map(
-      (o) => o.toJSON(),
+    this.defaultChannelOptions.permissionOverwrites.set(
+      this.parentCategory.permissionOverwrites.cache.map(
+        (o) => o.toJSON(),
+      )
     );
     Logger.verbose(`chan - defaultChannelOptions = ${JSON.stringify(this.defaultChannelOptions)}`);
 
@@ -80,12 +84,12 @@ module.exports = {
     }
     Logger.verbose(`chan - exceptionChannels : ${JSON.stringify(exceptionChannels)}`);
 
-    const previouslyCreatedChannels = guild.channels.cache.filter((channel) => channel.type === 'voice'
+    const previouslyCreatedChannels = guild.channels.cache.filter((channel) => channel.isVoice()
       && channel.parent === this.parentCategory
       && exceptionChannels.indexOf(channel.id) === -1);
 
     // if no previously created channels, nothing to do
-    if (!previouslyCreatedChannels.array().length) {
+    if (previouslyCreatedChannels.size === 0) {
       return;
     }
     Logger.info('chan - Some channels were created before relaunch, putting timeOut on them...');
@@ -95,7 +99,7 @@ module.exports = {
       // add into created channels array
       that.createdChannels.push(channel.id);
       // if currently no one in channel, put in timeout
-      if (channel.members.array().length === 0) {
+      if (channel.members.size === 0) {
         // add the defined timeout for the operation...
         Logger.info(`chan - No one in channel ${channel.name}... Applying timeout with value ${that.timeoutValue} milliseconds...`);
         that.channelsTimeouts[channel.id] = client.setTimeout(
@@ -178,7 +182,7 @@ module.exports = {
         that.createdChannels.push(newVoiceChannel.id);
 
         // if user is in voice chat, move him in the new created channel if we enabled the option
-        if (message.member.voice.channelID && this.moveUserInCreatedChannel) {
+        if (message.member.voice.channelId && this.moveUserInCreatedChannel) {
           message.member.voice.setChannel(newVoiceChannel)
             .then(() => {
               Logger.info('chan - Channel has been successfully created !');
@@ -250,7 +254,7 @@ module.exports = {
       // check if oldUserChannel is in list of created channels
       // and if there is no one left in the channel
       const channelIndex = this.createdChannels.indexOf(oldUserChannel.id);
-      if (channelIndex !== -1 && (oldUserChannel.members.array().length === 0)) {
+      if (channelIndex !== -1 && (oldUserChannel.members.size === 0)) {
         // add the defined timeout for the operation...
         Logger.info(`chan - no one left in channel ${oldUserChannel.name}... Applying timeout with value ${this.timeoutValue} milliseconds...`);
         this.channelsTimeouts[oldUserChannel.id] = client.setTimeout(

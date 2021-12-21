@@ -31,7 +31,7 @@ module.exports = {
       return;
     }
 
-    const commandAuthorChannel = message.member.voice.channelID || null;
+    const commandAuthorChannel = message.member.voice.channelId || null;
 
     // if only one arg, we want to move from
     // current author channel to another channel
@@ -66,7 +66,7 @@ module.exports = {
 
         // loop over guild channels to find the one we want
         message.guild.channels.cache.each((channel) => {
-          if (channel.type !== 'voice') return; // only voice channels
+          if (!channel.isVoice()) return; // only voice channels
 
           // if channel name doesn't match, continue
           if (!channel.name.toLowerCase().includes(processedArgs[i].toLowerCase())) return;
@@ -123,7 +123,7 @@ module.exports = {
     // assemble members to move from origin
     const membersToMove = [];
     message.guild.channels.cache.each((channel, channelSnowflake) => {
-      if (channel.type !== 'voice') return; // only voice channels
+      if (!channel.isVoice()) return; // only voice channels
       if (channelSnowflake === chans[0]) {
         channel.members.each((member) => {
           membersToMove.push(member);
@@ -162,7 +162,7 @@ module.exports = {
     const channelNames = [];
     for (let i = 0; i < 2; i += 1) {
       message.guild.channels.cache.each((channel, snowflake) => {
-        if (channel.type !== 'voice') return; // only voice channels
+        if (!channel.isVoice()) return; // only voice channels
         // if channel name matches, retrieve it
         if (snowflake === chans[i]) {
           channelNames[i] = channel.name;

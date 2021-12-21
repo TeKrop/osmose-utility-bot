@@ -1,4 +1,4 @@
-const BOT_VERSION = '1.0.0';
+const BOT_VERSION = '1.1.0';
 
 // Load some necessary files
 const Discord = require('discord.js');
@@ -16,7 +16,14 @@ const owchanCommand = require('./commands/owchan.js');
 const watcherCommand = require('./commands/watcher.js');
 
 // Basic initialisation
-const client = new Discord.Client();
+const intents = [
+  Discord.Intents.FLAGS.GUILDS,
+  Discord.Intents.FLAGS.GUILD_MESSAGES,
+  Discord.Intents.FLAGS.GUILD_VOICE_STATES,
+  Discord.Intents.FLAGS.GUILD_MEMBERS,
+  Discord.Intents.FLAGS.GUILD_PRESENCES
+];
+const client = new Discord.Client({ intents: intents });
 client.commands = new Discord.Collection([
   [chanCommand.name, chanCommand],
   [massmoveCommand.name, massmoveCommand],
@@ -25,21 +32,23 @@ client.commands = new Discord.Collection([
 ]);
 
 // Events handlers
-client.once('ready', () => {
-  client.commands.each((command) => {
-    if (typeof command.onBotReady === 'undefined') return;
-    Logger.verbose(`Initializing "${command.name}" command...`);
-    command.onBotReady(client);
-  });
+client.once('ready', async () => {
+  // Initialize commands
+  await client.commands.each(async (command) => {
+    if (typeof command.onBotReady !== 'undefined') {
+      Logger.verbose(`Initializing "${command.name}" command...`);
+      await command.onBotReady(client);
+    }
+  })
 
   // set a random custom status
   Logger.verbose('Initializing random status...');
-  CustomStatus.initRandomStatusJob(client);
+  await CustomStatus.initRandomStatusJob(client);
 
   Logger.info(`Osmose Utility Bot is ready ! Version : ${BOT_VERSION}`);
 });
 
-client.on('message', (message) => {
+client.on('messageCreate', (message) => {
   // don't need to analyze bot messages
   if (message.author.bot) return;
 
@@ -144,6 +153,22 @@ client.on('userUpdate', (oldUser, newUser) => {
     if (typeof command.onUserUpdate === 'undefined') return;
     Logger.verbose(`Triggering userUpdate on ${command.name}`);
     command.onUserUpdate(client, oldUser, newUser);
+  });
+});
+
+client.on('inviteCreate', (invite) => {
+  client.commands.each((command) => {
+    if (typeof command.onInviteCreate === 'undefined') return;
+    Logger.verbose(`Triggering inviteCreate on ${command.name}`);
+    command.onInviteCreate(client, invite);
+  });
+});
+
+client.on('inviteDelete', (invite) => {
+  client.commands.each((command) => {
+    if (typeof command.onInviteDelete === 'undefined') return;
+    Logger.verbose(`Triggering inviteDelete on ${command.name}`);
+    command.onInviteDelete(client, invite);
   });
 });
 
