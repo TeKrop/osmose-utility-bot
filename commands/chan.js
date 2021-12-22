@@ -8,7 +8,6 @@ const Logger = require('../services/logger');
 const Message = require('../services/message');
 
 module.exports = {
-  name: 'chan',
   parentCategory: null,
   timeoutValue: 86400000,
   chanLimit: 0,
@@ -22,13 +21,14 @@ module.exports = {
   async onBotReady(client) {
     const that = this;
     const guild = client.guilds.cache.first();
+    const chanConfig = Config.commands[this.name];
 
     // determine parent category : if not in config, search
     // for parent category of the targetted text channel
-    if (typeof Config.commands.chan.parentCategory !== 'undefined') {
-      this.parentCategory = await guild.channels.fetch(Config.commands.chan.parentCategory);
-    } else if (Config.commands.chan.channel && Config.commands.chan.channel.length > 0) {
-      const textChannel = await guild.channels.fetch(Config.commands.chan.channel);
+    if (typeof chanConfig.parentCategory !== 'undefined') {
+      this.parentCategory = await guild.channels.fetch(chanConfig.parentCategory);
+    } else if (chanConfig.channel && chanConfig.channel.length > 0) {
+      const textChannel = await guild.channels.fetch(chanConfig.channel);
       if (textChannel !== null) {
         this.parentCategory = textChannel.parent;
       }
@@ -36,32 +36,32 @@ module.exports = {
 
     // if parent category not found, do nothing
     if (this.parentCategory === null || this.parentCategory === undefined) {
-      Logger.error(`chan - ${Constants.PARENT_CATEGORY_NOT_FOUND}`);
+      Logger.error(`${this.name} - ${Constants.PARENT_CATEGORY_NOT_FOUND}`);
       return;
     }
-    Logger.verbose(`chan - parentCategory = ${this.parentCategory}`);
+    Logger.verbose(`${this.name} - parentCategory = ${this.parentCategory}`);
 
     // initialize configuration
-    if (typeof Config.commands.chan.timeout !== 'undefined') {
-      this.timeoutValue = parseInt(Config.commands.chan.timeout, 10);
+    if (typeof chanConfig.timeout !== 'undefined') {
+      this.timeoutValue = parseInt(chanConfig.timeout, 10);
     }
-    Logger.verbose(`chan - timeoutValue = ${this.timeoutValue}`);
+    Logger.verbose(`${this.name} - timeoutValue = ${this.timeoutValue}`);
 
-    if (typeof Config.commands.chan.limit !== 'undefined') {
-      this.chanLimit = parseInt(Config.commands.chan.limit, 10);
+    if (typeof chanConfig.limit !== 'undefined') {
+      this.chanLimit = parseInt(chanConfig.limit, 10);
     }
-    Logger.verbose(`chan - chanLimit = ${this.chanLimit}`);
+    Logger.verbose(`${this.name} - chanLimit = ${this.chanLimit}`);
 
     if (
-      typeof Config.commands.chan.moveUserInCreatedChannel !== 'undefined'
-      && Config.commands.chan.moveUserInCreatedChannel === true
+      typeof chanConfig.moveUserInCreatedChannel !== 'undefined'
+      && chanConfig.moveUserInCreatedChannel === true
     ) {
       this.moveUserInCreatedChannel = true;
     }
-    Logger.verbose(`chan - moveUserInCreatedChannel = ${JSON.stringify(this.moveUserInCreatedChannel)}`);
+    Logger.verbose(`${this.name} - moveUserInCreatedChannel = ${JSON.stringify(this.moveUserInCreatedChannel)}`);
 
-    if (typeof Config.commands.chan.bitrate !== 'undefined') {
-      this.defaultChannelOptions.bitrate = parseInt(Config.commands.chan.bitrate, 10);
+    if (typeof chanConfig.bitrate !== 'undefined') {
+      this.defaultChannelOptions.bitrate = parseInt(chanConfig.bitrate, 10);
     }
     if (this.defaultChannelOptions.bitrate < 8000) {
       this.defaultChannelOptions.bitrate = 8000; // minimum required by Discord API
@@ -73,15 +73,15 @@ module.exports = {
       (o) => o.toJSON(),
     );
 
-    Logger.verbose(`chan - defaultChannelOptions = ${JSON.stringify(this.defaultChannelOptions)}`);
+    Logger.verbose(`${this.name} - defaultChannelOptions = ${JSON.stringify(this.defaultChannelOptions)}`);
 
     // now, assemble a list of channels to check and put an immediate timer
     let exceptionChannels = new Collection();
-    if (typeof Config.commands.chan.exceptionChannels !== 'undefined') {
+    if (typeof chanConfig.exceptionChannels !== 'undefined') {
       exceptionChannels = guild.channels.cache.filter(channel => channel.isVoice()
-        && Config.commands.chan.exceptionChannels.includes(channel.id));
+        && chanConfig.exceptionChannels.includes(channel.id));
     }
-    Logger.verbose(`chan - exceptionChannels : ${JSON.stringify(exceptionChannels)}`);
+    Logger.verbose(`${this.name} - exceptionChannels : ${JSON.stringify(exceptionChannels)}`);
 
     this.createdChannels = guild.channels.cache.filter((channel) => channel.isVoice()
       && channel.parent === this.parentCategory
@@ -92,16 +92,16 @@ module.exports = {
       return;
     }
 
-    Logger.info('chan - Some channels were created before relaunch, putting timeOut on them...');
+    Logger.info(this.name + ' - Some channels were created before relaunch, putting timeOut on them...');
 
     this.createdChannels.each((channel) => {
-      Logger.info(`chan - adding channel ${channel.name} into list`);
+      Logger.info(`${this.name} - adding channel ${channel.name} into list`);
       // if currently no one in channel, put in timeout
       if (channel.members.size !== 0) {
         return;
       }
       // add the defined timeout for the operation...
-      Logger.info(`chan - No one in channel ${channel.name}... Applying timeout with value ${that.timeoutValue} milliseconds...`);
+      Logger.info(`${this.name} - No one in channel ${channel.name}... Applying timeout with value ${that.timeoutValue} milliseconds...`);
       that.channelsTimeouts.set(channel.id, setTimeout(
         that.timeoutMethod,
         that.timeoutValue,
@@ -111,7 +111,6 @@ module.exports = {
     });
   },
   async execute(client, message, args) {
-    const that = this;
     const channelOptions = { ...this.defaultChannelOptions };
 
     let channelName = args.split(' ');
@@ -124,7 +123,7 @@ module.exports = {
           title: Constants.INVALID_USERS_LIMIT_TITLE,
           description: Constants.INVALID_USERS_LIMIT_DESCRIPTION,
         });
-        Logger.warn('chan - Invalid max limits specified');
+        Logger.warn(this.name + ' - Invalid max limits specified');
         return;
       }
       channelOptions.userLimit = userLimit;
@@ -138,7 +137,7 @@ module.exports = {
         title: Constants.CHANNEL_NAME_NOT_SPECIFIED_TITLE,
         description: Constants.CHANNEL_NAME_NOT_SPECIFIED_DESCRIPTION,
       });
-      Logger.warn('chan - No channel name specificed');
+      Logger.warn(this.name + ' - No channel name specificed');
       return;
     }
 
@@ -148,7 +147,7 @@ module.exports = {
         title: Constants.CHANNEL_NAME_TOO_LONG_TITLE,
         description: Constants.CHANNEL_NAME_TOO_LONG_DESCRIPTION,
       });
-      Logger.warn('chan - Channel name is too long');
+      Logger.warn(this.name + ' - Channel name is too long');
       return;
     }
 
@@ -160,7 +159,7 @@ module.exports = {
           chanLimit: this.chanLimit,
         }),
       });
-      Logger.warn('chan - Max channels limit has been reached');
+      Logger.warn(this.name + ' - Max channels limit has been reached');
       return;
     }
 
@@ -173,13 +172,13 @@ module.exports = {
     }
 
     // create the channel
-    Logger.info(`chan - Creating channel "${channelName}" in category "${this.parentCategory.name}"...`);
-    Logger.verbose(`chan - ${JSON.stringify(channelOptions)}`);
+    Logger.info(`${this.name} - Creating channel "${channelName}" in category "${this.parentCategory.name}"...`);
+    Logger.verbose(`${this.name} - ${JSON.stringify(channelOptions)}`);
 
     try {
       newVoiceChannel = await message.guild.channels.create(channelName, channelOptions);
     } catch (error) {
-      Logger.error(`chan - ${error}`);
+      Logger.error(`${this.name} - ${error}`);
       Message.error(message.channel, {
         title: Constants.CHANNEL_CREATION_UNKNOWN_ERROR_TITLE,
         description: Constants.CHANNEL_CREATION_UNKNOWN_ERROR_DESCRIPTION,
@@ -198,7 +197,7 @@ module.exports = {
       try {
         await message.member.voice.setChannel(newVoiceChannel);
       } catch (error) {
-        Logger.error(`chan - ${error}`);
+        Logger.error(`${this.name} - ${error}`);
         Message.warn(message.channel, {
           title: Constants.CHANNEL_CREATED_BUT_MOVE_ERROR_TITLE,
           description: Constants.CHANNEL_CREATED_BUT_MOVE_ERROR_DESCRIPTION,
@@ -211,7 +210,7 @@ module.exports = {
 
     } else {
       // add the defined timeout for the operation...
-      Logger.info(`chan - Since no one for the moment, applying timeout with value ${this.timeoutValue} milliseconds...`);
+      Logger.info(`${this.name} - Since no one for the moment, applying timeout with value ${this.timeoutValue} milliseconds...`);
       this.channelsTimeouts.set(newVoiceChannel.id, setTimeout(
         this.timeoutMethod,
         this.timeoutValue,
@@ -221,7 +220,7 @@ module.exports = {
     }
 
     // display success message
-    Logger.info('chan - Channel has been successfully created !');
+    Logger.info(this.name + ' - Channel has been successfully created !');
     Message.success(message.channel, {
       title: successMessageTitle,
       description: Mustache.render(successMessageDescription, {
@@ -237,7 +236,7 @@ module.exports = {
 
     const oldChannelName = (oldUserChannel !== null) ? `${oldUserChannel.id} (${oldUserChannel.name})` : '...';
     const newChannelName = (newUserChannel !== null) ? `${newUserChannel.id} (${newUserChannel.name})` : '...';
-    Logger.verbose(`chan - ${oldChannelName} => ${newChannelName}`);
+    Logger.verbose(`${this.name} - ${oldChannelName} => ${newChannelName}`);
 
     // do nothing if same channel (voiceUpdate = mic)
     if (
@@ -256,7 +255,7 @@ module.exports = {
       // and if there is no one left in the channel
       if (this.createdChannels.has(oldUserChannel.id) && (oldUserChannel.members.size === 0)) {
         // add the defined timeout for the operation...
-        Logger.info(`chan - no one left in channel ${oldUserChannel.name}... Applying timeout with value ${this.timeoutValue} milliseconds...`);
+        Logger.info(`${this.name} - no one left in channel ${oldUserChannel.name}... Applying timeout with value ${this.timeoutValue} milliseconds...`);
         this.channelsTimeouts.set(oldUserChannel.id, setTimeout(
           this.timeoutMethod,
           this.timeoutValue,
@@ -272,18 +271,18 @@ module.exports = {
       if (!this.channelsTimeouts.has(newUserChannel.id)) return;
 
       // we joined a channel that had a timeout, clear it
-      Logger.info(`chan - someone joined channel ${newUserChannel.name} before end of timeout ! clear timeout...`);
+      Logger.info(`${this.name} - someone joined channel ${newUserChannel.name} before end of timeout ! clear timeout...`);
       clearTimeout(this.channelsTimeouts.get(newUserChannel.id));
       this.channelsTimeouts.delete(newUserChannel.id);
     }
   },
   timeoutMethod(context, userChannel) {
     // now delete the channel from the created channels, the channels timeouts and the server
-    Logger.info(`chan - timeout for channel ${userChannel.name} reached ! Deleting it...`);
+    Logger.info(`${this.name} - timeout for channel ${userChannel.name} reached ! Deleting it...`);
     context.createdChannels.delete(userChannel.id);
     context.channelsTimeouts.delete(userChannel.id);
 
     userChannel.delete()
-      .catch((error) => Logger.error(`chan - ${error}`));
+      .catch((error) => Logger.error(`${this.name} - ${error}`));
   },
 };

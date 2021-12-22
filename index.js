@@ -10,9 +10,11 @@ const Message = require('./services/message');
 const CustomStatus = require('./services/customStatus');
 
 // Commands
-const chanCommand = require('./commands/chan.js');
 const massmoveCommand = require('./commands/massmove.js');
 const watcherCommand = require('./commands/watcher.js');
+const abstractChanCommand = require('./commands/chan.js');
+const chanCommand = { ... abstractChanCommand, name: 'chan' };
+const owChanCommand = { ... abstractChanCommand, name: 'owchan' };
 
 // Basic initialisation
 const intents = [
@@ -26,6 +28,7 @@ const intents = [
 const client = new Discord.Client({ intents: intents });
 client.commands = new Discord.Collection([
   [chanCommand.name, chanCommand],
+  [owChanCommand.name, owChanCommand],
   [massmoveCommand.name, massmoveCommand],
   [watcherCommand.name, watcherCommand],
 ]);
