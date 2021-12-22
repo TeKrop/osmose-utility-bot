@@ -325,11 +325,11 @@ module.exports = {
     }
     const that = this;
 
-    Logger.info('watcher - Waiting 1 second to delete the invite (in case we need it for welcome process)...');
+    Logger.info('watcher - Waiting 2 seconds to delete the invite (in case we need it for welcome process)...');
     Logger.verbose(`watcher - ${JSON.stringify(invite)})`);
     setTimeout(() => {
       Logger.info(`watcher - Deleting the invite from the list (${invite.code})`);
       that.invites.delete(invite.code);
-    }, 1000);
+    }, 2000);
   }
 };

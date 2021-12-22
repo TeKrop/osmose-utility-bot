@@ -12,7 +12,6 @@ const CustomStatus = require('./services/customStatus');
 // Commands
 const chanCommand = require('./commands/chan.js');
 const massmoveCommand = require('./commands/massmove.js');
-const owchanCommand = require('./commands/owchan.js');
 const watcherCommand = require('./commands/watcher.js');
 
 // Basic initialisation
@@ -28,7 +27,6 @@ const client = new Discord.Client({ intents: intents });
 client.commands = new Discord.Collection([
   [chanCommand.name, chanCommand],
   [massmoveCommand.name, massmoveCommand],
-  [owchanCommand.name, owchanCommand],
   [watcherCommand.name, watcherCommand],
 ]);
 
@@ -48,7 +46,7 @@ client.once('ready', async() => {
   Logger.info(`Osmose Utility Bot is ready ! Version : ${BOT_VERSION}`);
 });
 
-client.on('messageCreate', (message) => {
+client.on('messageCreate', async(message) => {
   // don't need to analyze bot messages
   if (message.author.bot) return;
 
@@ -105,7 +103,7 @@ client.on('messageCreate', (message) => {
   // run the command
   try {
     Logger.info(`Executing "${command.name}" command from ${message.author.username} (${message.author.id})`);
-    command.execute(client, message, args.join(' '));
+    await command.execute(client, message, args.join(' '));
   } catch (error) {
     Message.error(message.channel, {
       title: Constants.UNKNOWN_ERROR_TITLE,
