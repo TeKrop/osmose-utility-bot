@@ -1,9 +1,11 @@
 const Mustache = require('mustache');
+const { Collection } = require('discord.js');
 
 const Config = require('../config.json');
 const Constants = require('../constants/watcher.json');
 const Logger = require('../services/logger');
 const Message = require('../services/message');
+const { fillCollection } = require('../services/utils');
 
 module.exports = {
   name: 'watcher',
@@ -13,91 +15,86 @@ module.exports = {
   guildMemberUpdateChannel: null,
   userUpdateChannel: null,
   exceptionUsers: [],
-  memberUpdateMessages: [],
-  memberLeavedMessages: [],
-  memberKickedMessages: [],
-  memberBannedMessages: [],
+  memberUpdateMessages: new Collection(),
+  memberLeavedMessages: new Collection(),
+  memberKickedMessages: new Collection(),
+  memberBannedMessages: new Collection(),
   adminUserUrl: '',
   invites: null,
-  onBotReady(client) {
+  async onBotReady(client) {
     const guild = client.guilds.cache.first();
-    const that = this;
+    const watcherConfig = Config.commands.watcher;
 
-    if (typeof Config.commands.watcher.guildMemberRemoveChannel !== 'undefined') {
+    if (typeof watcherConfig.guildMemberRemoveChannel !== 'undefined') {
       this.guildMemberRemoveChannel = guild.channels.cache.get(
-        Config.commands.watcher.guildMemberRemoveChannel,
+        watcherConfig.guildMemberRemoveChannel,
       );
     }
 
-    if (typeof Config.commands.watcher.guildMemberAddChannel !== 'undefined') {
+    if (typeof watcherConfig.guildMemberAddChannel !== 'undefined') {
       this.guildMemberAddChannel = guild.channels.cache.get(
-        Config.commands.watcher.guildMemberAddChannel,
+        watcherConfig.guildMemberAddChannel,
       );
     }
 
     if (
-      typeof Config.commands.watcher.specialInvites !== 'undefined'
-      && Object.keys(Config.commands.watcher.specialInvites).length > 0
+      typeof watcherConfig.specialInvites !== 'undefined'
+      && Object.keys(watcherConfig.specialInvites).length > 0
     ) {
-      this.specialInvites = Config.commands.watcher.specialInvites;
+      this.specialInvites = watcherConfig.specialInvites;
     }
 
-    if (typeof Config.commands.watcher.guildMemberUpdateChannel !== 'undefined') {
+    if (typeof watcherConfig.guildMemberUpdateChannel !== 'undefined') {
       this.guildMemberUpdateChannel = guild.channels.cache.get(
-        Config.commands.watcher.guildMemberUpdateChannel,
+        watcherConfig.guildMemberUpdateChannel,
       );
     }
 
-    if (typeof Config.commands.watcher.userUpdateChannel !== 'undefined') {
+    if (typeof watcherConfig.userUpdateChannel !== 'undefined') {
       this.userUpdateChannel = guild.channels.cache.get(
-        Config.commands.watcher.userUpdateChannel,
+        watcherConfig.userUpdateChannel,
       );
     }
 
-    if (typeof Config.commands.watcher.exceptionUsers !== 'undefined'
-      && Config.commands.watcher.exceptionUsers.length > 0
+    if (typeof watcherConfig.exceptionUsers !== 'undefined'
+      && watcherConfig.exceptionUsers.length > 0
     ) {
-      this.exceptionUsers = Config.commands.watcher.exceptionUsers;
+      this.exceptionUsers = watcherConfig.exceptionUsers;
     }
 
-    if (typeof Config.commands.watcher.memberUpdateMessages !== 'undefined'
-      && Config.commands.watcher.memberUpdateMessages.length > 0
+    if (typeof watcherConfig.memberUpdateMessages !== 'undefined'
+      && watcherConfig.memberUpdateMessages.length > 0
     ) {
-      this.memberUpdateMessages = Config.commands.watcher.memberUpdateMessages;
+      fillCollection(this.memberUpdateMessages, watcherConfig.memberUpdateMessages);
     }
 
-    if (typeof Config.commands.watcher.memberLeavedMessages !== 'undefined'
-      && Config.commands.watcher.memberLeavedMessages.length > 0
+    if (typeof watcherConfig.memberLeavedMessages !== 'undefined'
+      && watcherConfig.memberLeavedMessages.length > 0
     ) {
-      this.memberLeavedMessages = Config.commands.watcher.memberLeavedMessages;
+      fillCollection(this.memberLeavedMessages, watcherConfig.memberLeavedMessages);
     }
 
-    if (typeof Config.commands.watcher.memberKickedMessages !== 'undefined'
-      && Config.commands.watcher.memberKickedMessages.length > 0
+    if (typeof watcherConfig.memberKickedMessages !== 'undefined'
+      && watcherConfig.memberKickedMessages.length > 0
     ) {
-      this.memberKickedMessages = Config.commands.watcher.memberKickedMessages;
+      fillCollection(this.memberKickedMessages, watcherConfig.memberKickedMessages);
     }
 
-    if (typeof Config.commands.watcher.memberBannedMessages !== 'undefined'
-      && Config.commands.watcher.memberBannedMessages.length > 0
+    if (typeof watcherConfig.memberBannedMessages !== 'undefined'
+      && watcherConfig.memberBannedMessages.length > 0
     ) {
-      this.memberBannedMessages = Config.commands.watcher.memberBannedMessages;
+      fillCollection(this.memberBannedMessages, watcherConfig.memberBannedMessages);
     }
 
-    if (typeof Config.commands.watcher.adminUserUrl !== 'undefined') {
-      this.adminUserUrl = Config.commands.watcher.adminUserUrl;
+    if (typeof watcherConfig.adminUserUrl !== 'undefined') {
+      this.adminUserUrl = watcherConfig.adminUserUrl;
     }
 
-    // wait for additionnal 1s before initializing
-    setTimeout(() => {
-      Logger.info('watcher - Fetching guild invites...');
-      guild.invites.fetch().then((guildInvites) => {
-        that.invites = guildInvites;
-        Logger.verbose(`watcher - ${JSON.stringify(that.invites)}`);
-      });
-    }, 1000);
+    Logger.info('watcher - Fetching guild invites...');
+    this.invites = await guild.invites.fetch();
+    Logger.verbose(`watcher - ${JSON.stringify(this.invites)}`);
   },
-  onGuildMemberAdd(client, member) {
+  async onGuildMemberAdd(client, member) {
     // Don't notify for bots
     if (member.user.bot || this.guildMemberAddChannel === null) {
       return;
@@ -108,91 +105,75 @@ module.exports = {
     Logger.info('watcher - An new user joined the server...');
 
     // To compare, we need to load the current invite list.
-    guild.invites.fetch().then((guildInvites) => {
-      Logger.verbose(`watcher - ${JSON.stringify(guildInvites)}`);
+    guildInvites = await guild.invites.fetch();
+    Logger.verbose(`watcher - ${JSON.stringify(guildInvites)}`);
 
-      // This is the *existing* invites for the guild.
-      const ei = this.invites;
-      // Update the cached invites for the guild.
-      this.invites = guildInvites;
-      // Look through the invites, find the one for which the uses went up.
-      let invite = guildInvites.find((i) => {
-        // if the invite didn't exist before, pass
-        if (!ei.get(i.code)) return false;
-        return ei.get(i.code).uses < i.uses;
-      });
+    // This is the *existing* invites for the guild.
+    const ei = this.invites;
+    // Update the cached invites for the guild.
+    this.invites = guildInvites;
+    // Look through the invites, find the one for which the uses went up.
+    let invite = guildInvites.find(i => ei.has(i.code) && ei.get(i.code).uses < i.uses);
 
-      // if we didn't find any corresponding invite, check if we have
-      // one new invite with at least one use since last fetch.
-      // if this is the case, this is the one. If we have more than
-      // one new invite with at least one use, we can't know
-      // which one has been used... (it should not happend)
-      if (invite === null || invite === undefined) {
-        // search new invites with at least one use
-        const newInvites = [];
-        guildInvites.forEach((i) => {
-          // if the invitation existed before, pass
-          if (ei.get(i.code)) return;
-          // if the invitation hasn't been used yet, pass
-          if (i.uses === 0) return;
-          newInvites.push(i);
-        });
-        // if we have only one invite, this is the one
-        if (newInvites.length === 1) {
-          [invite] = newInvites;
-        }
+    // Check if an invite existed before, but not anymore.
+    // If this is the case, it's the one
+    if (typeof invite === 'undefined') {
+      Logger.info(`watcher - we must search in old invites which existed before but not anymore...`);
+      // search for old invites which is not here anymore
+      const oldInvites = ei.filter(i => !guildInvites.has(i.code));
+      // if we have only one invite, this is the one
+      if (oldInvites.size === 1) {
+        invite = oldInvites.first();
       }
+    }
 
-      // Finally, check if an invite existed before, but not anymore.
-      // If this is the case, it's the one
-      if (invite === null || invite === undefined) {
-        // search new invites with at least one use
-        const oldInvites = [];
-        ei.forEach((i) => {
-          // if the invitation still exists, pass
-          if (guildInvites.get(i.code)) return;
-          oldInvites.push(i);
-        });
-        // if we have only one invite, this is the one
-        if (oldInvites.length === 1) {
-          [invite] = oldInvites;
-        }
+    // Finally, if we didn't find any corresponding invite, check if we have
+    // one new invite with at least one use since last fetch.
+    // if this is the case, this is the one. If we have more than
+    // one new invite with at least one use, we can't know
+    // which one has been used... (it should not happen)
+    if (typeof invite === 'undefined') {
+      Logger.warn(`watcher - we must search in new invites since last fetch...`);
+      // search for new invites with at least one use
+      const newInvites = guildInvites.filter(i => !ei.has(i.code) && i.uses > 0);
+      // if we have only one invite, this is the one
+      if (newInvites.size === 1) {
+        invite = newInvites.first();
       }
+    }
 
-      // if invite hasn't been found, send a message anyway
-      let userOrigin = Constants.USER_INVITED_BY_UNKNOWN;
-      if (invite !== null && invite !== undefined) {
-        if (invite.code in this.specialInvites) {
-          // if this is a special invite, customize the message
-          userOrigin = Mustache.render(Constants.USER_INVITED_BY_SPECIAL_INVITE, {
-            specialInvite: this.specialInvites[invite.code],
+    // if invite hasn't been found, send a message anyway
+    let userOrigin = Constants.USER_INVITED_BY_UNKNOWN;
+    if (typeof invite !== 'undefined') {
+      if (invite.code in this.specialInvites) {
+        // if this is a special invite, customize the message
+        userOrigin = Mustache.render(Constants.USER_INVITED_BY_SPECIAL_INVITE, {
+          specialInvite: this.specialInvites[invite.code],
+        });
+      } else if (invite.inviter) {
+        // else, search if we have a specific inviter
+        const inviter = await guild.members.fetch(invite.inviter.id);
+        if (inviter) {
+          userOrigin = Mustache.render(Constants.USER_INVITED_BY_INVITER, {
+            inviter: inviter.displayName,
           });
-        } else if (invite.inviter) {
-          // else, search if we have a specific inviter
-          const inviter = guild.members.cache.get(invite.inviter.id);
-          if (inviter) {
-            userOrigin = Mustache.render(Constants.USER_INVITED_BY_INVITER, {
-              inviter: inviter.displayName,
-            });
-          }
         }
-
-        // else we don't have any precision about the origin of the user...
       }
+      // else we don't have any precision about the origin of the user...
+    }
 
-      Logger.info(`watcher - displayName : ${member.displayName}. userTag : ${member.user.tag}. userOrigin : ${userOrigin}`);
+    Logger.info(`watcher - displayName : ${member.displayName}. userTag : ${member.user.tag}. userOrigin : ${userOrigin}`);
 
-      Message.info(this.guildMemberAddChannel, {
-        title: Constants.NEW_USER_JOINED_SERVER_TITLE,
-        description: Mustache.render(Constants.NEW_USER_JOINED_SERVER_DESCRIPTION, {
-          displayName: member.displayName,
-          userTag: member.user.tag,
-          userOrigin,
-        }),
-      });
+    Message.info(this.guildMemberAddChannel, {
+      title: Constants.NEW_USER_JOINED_SERVER_TITLE,
+      description: Mustache.render(Constants.NEW_USER_JOINED_SERVER_DESCRIPTION, {
+        displayName: member.displayName,
+        userTag: member.user.tag,
+        userOrigin,
+      }),
     });
   },
-  onGuildMemberRemove(client, member) {
+  async onGuildMemberRemove(client, member) {
     if (this.guildMemberRemoveChannel === null) {
       return;
     }
@@ -202,51 +183,46 @@ module.exports = {
     let messageTitle = Constants.USER_LEAVED_SERVER;
     let descriptions = this.memberLeavedMessages;
 
-    guild.fetchAuditLogs({
-      type: 'DELETE',
-    }).then((audit) => {
-      const deleteActions = ['MEMBER_BAN_ADD', 'MEMBER_KICK'];
-      const logs = audit.entries.filter((log) => log.target
-        && log.target.id === member.user.id
-        && deleteActions.indexOf(log.action) !== -1);
+    const audit = await guild.fetchAuditLogs();
+    const logs = audit.entries.filter(log =>
+      log.target
+      && log.target.id === member.user.id
+      && log.actionType === 'DELETE'
+    );
+    if (logs.size > 0) {
+      const now = Date.now();
 
-      if (logs.size > 0) {
-        const now = Date.now();
-
-        // check if we have at least one log in the last 5 seconds
-        const lastLog = logs.find((log) => log.createdTimestamp > (now - 5000));
-
-        if (lastLog !== null && lastLog !== undefined) {
-          if (lastLog.action === 'MEMBER_KICK') {
-            messageTitle = Mustache.render(Constants.USER_WAS_KICKED_BY_USER, {
-              executor: lastLog.executor.username,
-            });
-            descriptions = this.memberKickedMessages;
-          } else if (lastLog.action === 'MEMBER_BAN_ADD') {
-            messageTitle = Mustache.render(Constants.USER_WAS_BANNED_BY_USER, {
-              executor: lastLog.executor.username,
-            });
-            descriptions = this.memberBannedMessages;
-          }
+      // check if we have at least one log in the last 5 seconds
+      const lastLog = logs.find((log) => log.createdTimestamp > (now - 5000));
+      if (typeof lastLog !== 'undefined') {
+        if (lastLog.action === 'MEMBER_KICK') {
+          messageTitle = Mustache.render(Constants.USER_WAS_KICKED_BY_USER, {
+            executor: lastLog.executor.username,
+          });
+          descriptions = this.memberKickedMessages;
+        } else if (lastLog.action === 'MEMBER_BAN_ADD') {
+          messageTitle = Mustache.render(Constants.USER_WAS_BANNED_BY_USER, {
+            executor: lastLog.executor.username,
+          });
+          descriptions = this.memberBannedMessages;
         }
       }
+    }
 
-      if (descriptions.length === 0) {
-        return;
-      }
+    if (descriptions.size === 0) {
+      return;
+    }
 
-      const randDescriptionNum = Math.floor(Math.random() * descriptions.length);
-      let messageDescription = descriptions[randDescriptionNum];
-      messageDescription = Mustache.render(messageDescription, {
-        X: `**${member.displayName}**`,
-      });
+    let messageDescription = descriptions.random();
+    messageDescription = Mustache.render(messageDescription, {
+      X: `**${member.displayName}**`,
+    });
 
-      // send a message to the configured channel
-      Message.info(this.guildMemberRemoveChannel, {
-        title: messageTitle,
-        description: messageDescription,
-        url: Mustache.render(this.adminUserUrl, { memberUserId: member.user.id }),
-      });
+    // send a message to the configured channel
+    Message.info(this.guildMemberRemoveChannel, {
+      title: messageTitle,
+      description: messageDescription,
+      url: Mustache.render(this.adminUserUrl, { memberUserId: member.user.id }),
     });
   },
   onGuildMemberUpdate(client, oldMember, newMember) {
@@ -268,12 +244,11 @@ module.exports = {
       return;
     }
 
-    if (this.guildMemberUpdateChannel === null || this.memberUpdateMessages.length === 0) {
+    if (this.guildMemberUpdateChannel === null || this.memberUpdateMessages.size === 0) {
       return;
     }
 
-    const randMessageNum = Math.floor(Math.random() * this.memberUpdateMessages.length);
-    const message = Mustache.render(this.memberUpdateMessages[randMessageNum], {
+    const message = Mustache.render(this.memberUpdateMessages.random(), {
       A: oldMember.displayName,
       B: newMember.displayName,
     });
@@ -302,18 +277,16 @@ module.exports = {
       return;
     }
 
-    if (this.memberUpdateMessages.length === 0) {
+    if (this.memberUpdateMessages.size === 0) {
       return;
     }
-
-    const randMessageNum = Math.floor(Math.random() * this.memberUpdateMessages.length);
 
     if (this.guildMemberUpdateChannel !== null) {
       const guild = client.guilds.cache.first();
       const guildMember = guild.members.resolve(newUser);
       if (guildMember.displayName === newUser.username) {
         // send a message to the configured channel
-        const memberUpdateMessage = Mustache.render(this.memberUpdateMessages[randMessageNum], {
+        const memberUpdateMessage = Mustache.render(this.memberUpdateMessages.random(), {
           A: oldUser.username,
           B: newUser.username,
         });
@@ -326,7 +299,7 @@ module.exports = {
 
     // send a message to the configured channel
     if (this.userUpdateChannel !== null) {
-      const userUpdateMessage = Mustache.render(this.memberUpdateMessages[randMessageNum], {
+      const userUpdateMessage = Mustache.render(this.memberUpdateMessages.random(), {
         A: oldUser.tag,
         B: newUser.tag,
       });
@@ -350,8 +323,13 @@ module.exports = {
     if (!this.invites.has(invite.code)) {
       return;
     }
-    Logger.info(`watcher - Deleting an invite from the list (${invite.code})`);
+    const that = this;
+
+    Logger.info('watcher - Waiting 1 second to delete the invite (in case we need it for welcome process)...');
     Logger.verbose(`watcher - ${JSON.stringify(invite)})`);
-    this.invites.delete(invite.code);
+    setTimeout(() => {
+      Logger.info(`watcher - Deleting the invite from the list (${invite.code})`);
+      that.invites.delete(invite.code);
+    }, 1000);
   }
 };

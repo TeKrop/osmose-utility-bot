@@ -70,11 +70,10 @@ module.exports = {
 
     // put the same permissions as the parent category
     this.defaultChannelOptions.parent = this.parentCategory.id;
-    this.defaultChannelOptions.permissionOverwrites.set(
-      this.parentCategory.permissionOverwrites.cache.map(
-        (o) => o.toJSON(),
-      )
+    this.defaultChannelOptions.permissionOverwrites = this.parentCategory.permissionOverwrites.cache.map(
+      (o) => o.toJSON(),
     );
+
     Logger.verbose(`chan - defaultChannelOptions = ${JSON.stringify(this.defaultChannelOptions)}`);
 
     // now, assemble a list of channels to check and put an immediate timer

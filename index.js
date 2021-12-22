@@ -18,10 +18,11 @@ const watcherCommand = require('./commands/watcher.js');
 // Basic initialisation
 const intents = [
   Discord.Intents.FLAGS.GUILDS,
+  Discord.Intents.FLAGS.GUILD_INVITES,
   Discord.Intents.FLAGS.GUILD_MESSAGES,
-  Discord.Intents.FLAGS.GUILD_VOICE_STATES,
   Discord.Intents.FLAGS.GUILD_MEMBERS,
-  Discord.Intents.FLAGS.GUILD_PRESENCES
+  Discord.Intents.FLAGS.GUILD_PRESENCES,
+  Discord.Intents.FLAGS.GUILD_VOICE_STATES,
 ];
 const client = new Discord.Client({ intents: intents });
 client.commands = new Discord.Collection([
@@ -32,14 +33,13 @@ client.commands = new Discord.Collection([
 ]);
 
 // Events handlers
-client.once('ready', async () => {
+client.once('ready', async() => {
   // Initialize commands
-  await client.commands.each(async (command) => {
-    if (typeof command.onBotReady !== 'undefined') {
-      Logger.verbose(`Initializing "${command.name}" command...`);
-      await command.onBotReady(client);
-    }
-  })
+  await client.commands.each( async(command) => {
+    if (typeof command.onBotReady === 'undefined') return;
+    Logger.verbose(`Initializing "${command.name}" command...`);
+    await command.onBotReady(client);
+  });
 
   // set a random custom status
   Logger.verbose('Initializing random status...');
@@ -124,19 +124,19 @@ client.on('voiceStateUpdate', (oldState, newState) => {
   });
 });
 
-client.on('guildMemberAdd', (member) => {
-  client.commands.each((command) => {
+client.on('guildMemberAdd', async(member) => {
+  await client.commands.each( async(command) => {
     if (typeof command.onGuildMemberAdd === 'undefined') return;
     Logger.verbose(`Triggering onGuildMemberAdd on ${command.name}`);
-    command.onGuildMemberAdd(client, member);
+    await command.onGuildMemberAdd(client, member);
   });
 });
 
-client.on('guildMemberRemove', (member) => {
-  client.commands.each((command) => {
+client.on('guildMemberRemove', async(member) => {
+  await client.commands.each( async(command) => {
     if (typeof command.onGuildMemberRemove === 'undefined') return;
     Logger.verbose(`Triggering guildMemberRemove on ${command.name}`);
-    command.onGuildMemberRemove(client, member);
+    await command.onGuildMemberRemove(client, member);
   });
 });
 
