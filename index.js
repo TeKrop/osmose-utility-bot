@@ -10,11 +10,12 @@ const Message = require('./services/message');
 const CustomStatus = require('./services/customStatus');
 
 // Commands
-const massmoveCommand = require('./commands/massmove.js');
-const watcherCommand = require('./commands/watcher.js');
-const abstractChanCommand = require('./commands/chan.js');
-const chanCommand = { ... abstractChanCommand, name: 'chan' };
-const owChanCommand = { ... abstractChanCommand, name: 'owchan' };
+const massmoveCommand = require('./commands/massmove');
+const watcherCommand = require('./commands/watcher');
+const abstractChanCommand = require('./commands/chan');
+
+const chanCommand = { ...abstractChanCommand, name: 'chan' };
+const owChanCommand = { ...abstractChanCommand, name: 'owchan' };
 
 // Basic initialisation
 const intents = [
@@ -25,7 +26,7 @@ const intents = [
   Discord.Intents.FLAGS.GUILD_PRESENCES,
   Discord.Intents.FLAGS.GUILD_VOICE_STATES,
 ];
-const client = new Discord.Client({ intents: intents });
+const client = new Discord.Client({ intents });
 client.commands = new Discord.Collection([
   [chanCommand.name, chanCommand],
   [owChanCommand.name, owChanCommand],
@@ -34,9 +35,9 @@ client.commands = new Discord.Collection([
 ]);
 
 // Events handlers
-client.once('ready', async() => {
+client.once('ready', async () => {
   // Initialize commands
-  await Promise.all(client.commands.map( async(command) => {
+  await Promise.all(client.commands.map(async (command) => {
     if (typeof command.onBotReady === 'undefined') return;
     Logger.verbose(`Initializing "${command.name}" command...`);
     await command.onBotReady(client);
@@ -49,7 +50,7 @@ client.once('ready', async() => {
   Logger.info(`Osmose Utility Bot is ready ! Version : ${BOT_VERSION}`);
 });
 
-client.on('messageCreate', async(message) => {
+client.on('messageCreate', async (message) => {
   // don't need to analyze bot messages
   if (message.author.bot) return;
 
@@ -125,16 +126,16 @@ client.on('voiceStateUpdate', (oldState, newState) => {
   });
 });
 
-client.on('guildMemberAdd', async(member) => {
-  await Promise.all(client.commands.map( async(command) => {
+client.on('guildMemberAdd', async (member) => {
+  await Promise.all(client.commands.map(async (command) => {
     if (typeof command.onGuildMemberAdd === 'undefined') return;
     Logger.verbose(`Triggering onGuildMemberAdd on ${command.name}`);
     await command.onGuildMemberAdd(client, member);
   }));
 });
 
-client.on('guildMemberRemove', async(member) => {
-  await Promise.all(client.commands.map( async(command) => {
+client.on('guildMemberRemove', async (member) => {
+  await Promise.all(client.commands.map(async (command) => {
     if (typeof command.onGuildMemberRemove === 'undefined') return;
     Logger.verbose(`Triggering guildMemberRemove on ${command.name}`);
     await command.onGuildMemberRemove(client, member);

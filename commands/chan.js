@@ -70,16 +70,20 @@ module.exports = {
 
     // put the same permissions as the parent category
     this.defaultChannelOptions.parent = this.parentCategory;
-    this.defaultChannelOptions.permissionOverwrites = this.parentCategory.permissionOverwrites.cache.map(
-      (o) => o.toJSON(),
-    );
+    this.defaultChannelOptions.permissionOverwrites = this
+      .parentCategory
+      .permissionOverwrites
+      .cache
+      .map(
+        (o) => o.toJSON(),
+      );
 
     Logger.verbose(`${this.name} - defaultChannelOptions = ${JSON.stringify(this.defaultChannelOptions)}`);
 
     // now, assemble a list of channels to check and put an immediate timer
     let exceptionChannels = new Collection();
     if (typeof chanConfig.exceptionChannels !== 'undefined') {
-      exceptionChannels = guild.channels.cache.filter(channel => channel.isVoice()
+      exceptionChannels = guild.channels.cache.filter((channel) => channel.isVoice()
         && chanConfig.exceptionChannels.includes(channel.id));
     }
     Logger.verbose(`${this.name} - exceptionChannels : ${JSON.stringify(exceptionChannels)}`);
@@ -93,7 +97,7 @@ module.exports = {
       return;
     }
 
-    Logger.info(this.name + ' - Some channels were created before relaunch, putting timeOut on them...');
+    Logger.info(`${this.name} - Some channels were created before relaunch, putting timeOut on them...`);
 
     this.createdChannels.each((channel) => {
       Logger.info(`${this.name} - adding channel ${channel.name} into list`);
@@ -124,7 +128,7 @@ module.exports = {
           title: Constants.INVALID_USERS_LIMIT_TITLE,
           description: Constants.INVALID_USERS_LIMIT_DESCRIPTION,
         });
-        Logger.warn(this.name + ' - Invalid max limits specified');
+        Logger.warn(`${this.name} - Invalid max limits specified`);
         return;
       }
       channelOptions.userLimit = userLimit;
@@ -138,7 +142,7 @@ module.exports = {
         title: Constants.CHANNEL_NAME_NOT_SPECIFIED_TITLE,
         description: Constants.CHANNEL_NAME_NOT_SPECIFIED_DESCRIPTION,
       });
-      Logger.warn(this.name + ' - No channel name specificed');
+      Logger.warn(`${this.name} - No channel name specificed`);
       return;
     }
 
@@ -148,7 +152,7 @@ module.exports = {
         title: Constants.CHANNEL_NAME_TOO_LONG_TITLE,
         description: Constants.CHANNEL_NAME_TOO_LONG_DESCRIPTION,
       });
-      Logger.warn(this.name + ' - Channel name is too long');
+      Logger.warn(`${this.name} - Channel name is too long`);
       return;
     }
 
@@ -160,7 +164,7 @@ module.exports = {
           chanLimit: this.chanLimit,
         }),
       });
-      Logger.warn(this.name + ' - Max channels limit has been reached');
+      Logger.warn(`${this.name} - Max channels limit has been reached`);
       return;
     }
 
@@ -177,6 +181,7 @@ module.exports = {
     Logger.verbose(`${this.name} - ${JSON.stringify(this.defaultChannelOptions)}`);
     Logger.verbose(`${this.name} - ${JSON.stringify(channelOptions)}`);
 
+    let newVoiceChannel = null;
     try {
       newVoiceChannel = await message.guild.channels.create(channelName, channelOptions);
     } catch (error) {
@@ -209,7 +214,6 @@ module.exports = {
 
       successMessageTitle = Constants.CHANNEL_CREATED_AND_MOVED_TITLE;
       successMessageDescription = Constants.CHANNEL_CREATED_AND_MOVED_DESCRIPTION;
-
     } else {
       // add the defined timeout for the operation...
       Logger.info(`${this.name} - Since no one for the moment, applying timeout with value ${this.timeoutValue} milliseconds...`);
@@ -222,7 +226,7 @@ module.exports = {
     }
 
     // display success message
-    Logger.info(this.name + ' - Channel has been successfully created !');
+    Logger.info(`${this.name} - Channel has been successfully created !`);
     Message.success(message.channel, {
       title: successMessageTitle,
       description: Mustache.render(successMessageDescription, {

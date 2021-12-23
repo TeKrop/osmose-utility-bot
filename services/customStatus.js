@@ -20,9 +20,9 @@ module.exports = {
     }
 
     const possibleCategories = collectionFromArray(
-      ['LISTENING', 'WATCHING', 'PLAYING', 'STREAMING', 'COMPETING']
+      ['LISTENING', 'WATCHING', 'PLAYING', 'STREAMING', 'COMPETING'],
     );
-    possibleCategories.each(category => {
+    possibleCategories.each((category) => {
       if (Config.customStatus.list[category] && Config.customStatus.list[category].length > 0) {
         this.statusList[category] = collectionFromArray(Config.customStatus.list[category]);
       }
@@ -68,18 +68,16 @@ module.exports = {
 
     // get guildMembers and filter bots
     const allGuildMembers = await guild.members.fetch();
-    const guildMembers = allGuildMembers.filter(member => !member.user.bot);
+    const guildMembers = allGuildMembers.filter((member) => !member.user.bot);
 
     // construct members list and admin list
-    const adminsList = guildMembers.filter(member => {
+    const adminsList = guildMembers.filter((member) => (
       member.roles.cache.has(this.adminRole)
-    });
-    const membersList = guildMembers.filter(member => {
-      return (
-        !member.roles.cache.has(this.adminRole)
+    ));
+    const membersList = guildMembers.filter((member) => (
+      !member.roles.cache.has(this.adminRole)
         && member.roles.cache.hasAny(this.acceptedMembersRoles)
-      );
-    });
+    ));
 
     // create a random status
     const category = this.categories.random();

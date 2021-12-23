@@ -91,10 +91,10 @@ module.exports = {
     }
 
     Logger.info('watcher - Fetching guild invites...');
-    guildInvites = await guild.invites.fetch();
-    this.invites = guildInvites.mapValues((invite, code) => {
-      return {code: code, uses: invite.uses, inviter: invite.inviter}
-    });
+    const guildInvites = await guild.invites.fetch();
+    this.invites = guildInvites.mapValues((invite, code) => (
+      { code, uses: invite.uses, inviter: invite.inviter }
+    ));
   },
   async onGuildMemberAdd(client, member) {
     // Don't notify for bots
@@ -105,20 +105,22 @@ module.exports = {
     // To compare, we need to load the updated invite list.
     Logger.info('watcher - An new user joined the server...');
     const guild = client.guilds.cache.first();
-    updatedInvites = await guild.invites.fetch();
+    const updatedInvites = await guild.invites.fetch();
 
     Logger.verbose(`watcher - ${JSON.stringify(updatedInvites)}`);
     Logger.verbose(`watcher - ${JSON.stringify(this.invites)}`);
 
     // Look through the invites, find the one for which the uses went up.
-    let invite = updatedInvites.find(i => this.invites.has(i.code) && this.invites.get(i.code).uses < i.uses);
+    let invite = updatedInvites.find((i) => (
+      this.invites.has(i.code) && this.invites.get(i.code).uses < i.uses
+    ));
 
     // Check if an invite existed before, but not anymore.
     // If this is the case, it's the one
     if (typeof invite === 'undefined') {
-      Logger.info(`watcher - we must search in old invites which existed before but not anymore...`);
+      Logger.info('watcher - we must search in old invites which existed before but not anymore...');
       // search for old invites which is not here anymore
-      const oldInvites = this.invites.filter(i => !updatedInvites.has(i.code));
+      const oldInvites = this.invites.filter((i) => !updatedInvites.has(i.code));
       // if we have only one invite, this is the one
       if (oldInvites.size === 1) {
         invite = oldInvites.first();
@@ -131,9 +133,9 @@ module.exports = {
     // one new invite with at least one use, we can't know
     // which one has been used... (it should not happen)
     if (typeof invite === 'undefined') {
-      Logger.warn(`watcher - we must search in new invites since last fetch...`);
+      Logger.warn('watcher - we must search in new invites since last fetch...');
       // search for new invites with at least one use
-      const newInvites = updatedInvites.filter(i => !this.invites.has(i.code) && i.uses > 0);
+      const newInvites = updatedInvites.filter((i) => !this.invites.has(i.code) && i.uses > 0);
       // if we have only one invite, this is the one
       if (newInvites.size === 1) {
         invite = newInvites.first();
@@ -172,9 +174,9 @@ module.exports = {
     });
 
     // Update all invites for uses number update
-    this.invites = guildInvites.mapValues((invite, code) => {
-      return {code: code, uses: invite.uses, inviter: invite.inviter}
-    });
+    this.invites = updatedInvites.mapValues((i, code) => (
+      { code, uses: i.uses, inviter: i.inviter }
+    ));
   },
   async onGuildMemberRemove(client, member) {
     if (this.guildMemberRemoveChannel === null) {
@@ -187,11 +189,9 @@ module.exports = {
     let descriptions = this.memberLeavedMessages;
 
     const audit = await guild.fetchAuditLogs();
-    const logs = audit.entries.filter(log =>
-      log.target
+    const logs = audit.entries.filter((log) => log.target
       && log.target.id === member.user.id
-      && log.actionType === 'DELETE'
-    );
+      && log.actionType === 'DELETE');
     if (logs.size > 0) {
       const now = Date.now();
 
@@ -319,7 +319,9 @@ module.exports = {
     }
     Logger.info(`watcher - Adding a new invite to the list (${invite.code})`);
     Logger.verbose(`watcher - ${JSON.stringify(invite)})`);
-    this.invites.set(invite.code, {code: invite.code, uses: invite.uses, inviter: invite.inviter});
+    this.invites.set(invite.code, {
+      code: invite.code, uses: invite.uses, inviter: invite.inviter,
+    });
   },
   onInviteDelete(client, invite) {
     // if the invite is not in the list, do nothing
@@ -334,5 +336,5 @@ module.exports = {
       Logger.info(`watcher - Deleting the invite from the list (${invite.code})`);
       that.invites.delete(invite.code);
     }, 2000);
-  }
+  },
 };

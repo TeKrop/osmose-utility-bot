@@ -1,7 +1,6 @@
 const Mustache = require('mustache');
 const { Collection } = require('discord.js');
 
-const Config = require('../config.json');
 const Constants = require('../constants/massmove.json');
 const Logger = require('../services/logger');
 const Message = require('../services/message');
@@ -10,7 +9,7 @@ module.exports = {
   name: 'massmove',
   async execute(client, message, args) {
     // split by defined separator, and filter empty values
-    let processedArgs = args.split(/ --> /);
+    const processedArgs = args.split(/ --> /);
     for (let i = processedArgs.length - 1; i >= 0; i -= 1) {
       if (processedArgs[i].length === 0) {
         processedArgs.splice(i, 1);
@@ -41,19 +40,19 @@ module.exports = {
         return;
       }
       originChannel = commandAuthorChannel;
-      processedArgs[1] = processedArgs[0];
+      [processedArgs[0], processedArgs[0]] = processedArgs;
     } else {
-      originChannelName = processedArgs[0].toLowerCase();
-      originChannel = message.guild.channels.cache.find(channel => {
-        return channel.isVoice() && channel.name.toLowerCase().includes(originChannelName);
-      }) || null;
+      const originChannelName = processedArgs[0].toLowerCase();
+      originChannel = message.guild.channels.cache.find((channel) => (
+        channel.isVoice() && channel.name.toLowerCase().includes(originChannelName)
+      )) || null;
     }
 
     // search destination channel
-    destinationChannelName = processedArgs[1].toLowerCase();
-    const destinationChannel = message.guild.channels.cache.find(channel => {
-      return channel.isVoice() && channel.name.toLowerCase().includes(destinationChannelName);
-    }) || null;
+    const destinationChannelName = processedArgs[1].toLowerCase();
+    const destinationChannel = message.guild.channels.cache.find((channel) => (
+      channel.isVoice() && channel.name.toLowerCase().includes(destinationChannelName)
+    )) || null;
 
     Logger.verbose(originChannel);
     Logger.verbose(destinationChannel);
@@ -67,7 +66,7 @@ module.exports = {
       if (destinationChannel === null) {
         notFoundChansList.add(processedArgs[1]);
       }
-      notFoundChans = Array.from(notFoundChansList).join(', ');
+      const notFoundChans = Array.from(notFoundChansList).join(', ');
       Message.error(message.channel, {
         title: Constants.CHANNELS_NOT_FOUND_TITLE,
         description: Mustache.render(Constants.CHANNELS_NOT_FOUND_DESCRIPTION, {
@@ -99,9 +98,9 @@ module.exports = {
     }
 
     // move them to destination channel
-    membersNotMoved = new Collection();
-    membersMoved = new Collection();
-    await Promise.all(membersToMove.map( async(member) => {
+    const membersNotMoved = new Collection();
+    const membersMoved = new Collection();
+    await Promise.all(membersToMove.map(async (member) => {
       try {
         Logger.info(`massmove - moving ${member.displayName}...`);
         await member.voice.setChannel(destinationChannel);
@@ -122,7 +121,7 @@ module.exports = {
     if (membersMoved.size === 0) {
       Message.error(message.channel, {
         title: Constants.MASSMOVE_NOT_ANY_USER_MOVED_ERROR_TITLE,
-        description: Constants.MASSMOVE_NOT_ANY_USER_MOVED_ERROR_DESCRIPTION
+        description: Constants.MASSMOVE_NOT_ANY_USER_MOVED_ERROR_DESCRIPTION,
       });
       return;
     }
@@ -134,7 +133,7 @@ module.exports = {
         description: Mustache.render(Constants.MASSMOVE_SOME_USERS_NOT_MOVED_ERROR_DESCRIPTION, {
           nbNotMovedUsers: membersNotMoved.size,
           pluralUsers: (membersNotMoved.size > 1 ? 's' : ''),
-          notMovedUsers: membersNotMoved.map(member => member.displayName).join(', ')
+          notMovedUsers: membersNotMoved.map((member) => member.displayName).join(', '),
         }),
       });
     }
