@@ -4,7 +4,7 @@
 [![Issues](https://img.shields.io/github/issues/TeKrop/osmose-utility-bot)](https://github.com/TeKrop/osmose-utility-bot/issues)
 [![License: MIT](https://img.shields.io/github/license/TeKrop/osmose-utility-bot)](https://github.com/TeKrop/osmose-utility-bot/blob/master/LICENSE)
 
-> Discord Bot made with Discord.js for Osmose Gaming Community. Using specific commands, users can dynamically create voice channels (`chan` and `owchan`), move people from one voice channel to another (`massmove`), assign a specific role to a user (`role`), send a message when a specific event is occuring (`watcher`), etc. Warning : it was designed to be used on only one guild (server) at a time.
+> Discord Bot made with Discord.js for Osmose Gaming Community. Using specific commands, users can dynamically create voice channels (`chan` and `owchan`), move people from one voice channel to another (`massmove`), send a message when a specific event is occuring (`watcher`), etc. Warning : it was designed to be used on only one guild (server) at a time.
 
 ## Table of contents
 * [🛠️ Configuration](#%EF%B8%8F-configuration)
