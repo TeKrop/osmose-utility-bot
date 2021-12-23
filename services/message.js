@@ -8,7 +8,7 @@ module.exports = {
   error(channel, data) {
     return this.message(channel, Object.assign(data, {
       title: Mustache.render(Constants.ERROR_MESSAGE, { title: data.title }),
-      color: 'RED',
+      color: 'DARK_RED',
     }));
   },
   warn(channel, data) {
@@ -33,7 +33,6 @@ module.exports = {
     }
 
     Logger.verbose(`message - ${JSON.stringify(data)}`);
-    Logger.verbose(`message - ${data.url ? data.url : ''}`);
 
     Logger.info(`message - ${data.title}`);
     Logger.info(`message - ${data.description}`);

@@ -12,10 +12,7 @@ module.exports = {
   timeoutValue: 86400000,
   chanLimit: 0,
   moveUserInCreatedChannel: false,
-  defaultChannelOptions: {
-    type: 'voice',
-    bitrate: 64000, // default, in bps
-  },
+  defaultChannelOptions: {},
   createdChannels: new Collection(),
   channelsTimeouts: new Collection(),
   async onBotReady(client) {
@@ -60,6 +57,10 @@ module.exports = {
     }
     Logger.verbose(`${this.name} - moveUserInCreatedChannel = ${JSON.stringify(this.moveUserInCreatedChannel)}`);
 
+    this.defaultChannelOptions = {
+      type: 'GUILD_VOICE',
+      bitrate: 64000, // default, in bps
+    };
     if (typeof chanConfig.bitrate !== 'undefined') {
       this.defaultChannelOptions.bitrate = parseInt(chanConfig.bitrate, 10);
     }
@@ -68,7 +69,7 @@ module.exports = {
     }
 
     // put the same permissions as the parent category
-    this.defaultChannelOptions.parent = this.parentCategory.id;
+    this.defaultChannelOptions.parent = this.parentCategory;
     this.defaultChannelOptions.permissionOverwrites = this.parentCategory.permissionOverwrites.cache.map(
       (o) => o.toJSON(),
     );
@@ -84,7 +85,7 @@ module.exports = {
     Logger.verbose(`${this.name} - exceptionChannels : ${JSON.stringify(exceptionChannels)}`);
 
     this.createdChannels = guild.channels.cache.filter((channel) => channel.isVoice()
-      && channel.parent === this.parentCategory
+      && channel.parent.id === this.parentCategory.id
       && !exceptionChannels.has(channel.id));
 
     // if no previously created channels, nothing to do
@@ -173,6 +174,7 @@ module.exports = {
 
     // create the channel
     Logger.info(`${this.name} - Creating channel "${channelName}" in category "${this.parentCategory.name}"...`);
+    Logger.verbose(`${this.name} - ${JSON.stringify(this.defaultChannelOptions)}`);
     Logger.verbose(`${this.name} - ${JSON.stringify(channelOptions)}`);
 
     try {
@@ -278,11 +280,11 @@ module.exports = {
   },
   timeoutMethod(context, userChannel) {
     // now delete the channel from the created channels, the channels timeouts and the server
-    Logger.info(`${this.name} - timeout for channel ${userChannel.name} reached ! Deleting it...`);
+    Logger.info(`${context.name} - timeout for channel ${userChannel.name} reached ! Deleting it...`);
     context.createdChannels.delete(userChannel.id);
     context.channelsTimeouts.delete(userChannel.id);
 
     userChannel.delete()
-      .catch((error) => Logger.error(`${this.name} - ${error}`));
+      .catch((error) => Logger.error(`${context.name} - ${error}`));
   },
 };

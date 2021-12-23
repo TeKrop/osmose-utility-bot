@@ -20,7 +20,7 @@
             "moveUserInCreatedChannel": false
         },
         "massmove": {
-            "channel": "123456789",
+            "channel": "123456789"
         },
         "owchan": {
             "channel": "123456789",

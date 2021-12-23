@@ -36,11 +36,11 @@ client.commands = new Discord.Collection([
 // Events handlers
 client.once('ready', async() => {
   // Initialize commands
-  await client.commands.each( async(command) => {
+  await Promise.all(client.commands.map( async(command) => {
     if (typeof command.onBotReady === 'undefined') return;
     Logger.verbose(`Initializing "${command.name}" command...`);
     await command.onBotReady(client);
-  });
+  }));
 
   // set a random custom status
   Logger.verbose('Initializing random status...');
@@ -99,7 +99,7 @@ client.on('messageCreate', async(message) => {
       tag: message.author.id,
       description: Constants.WRONG_TEXT_CHANNEL_USED_DESCRIPTION,
     });
-    Logger.error(`Wrong chan usage from ${message.author.id}`);
+    Logger.error(`Wrong chan usage from ${message.author.username} (${message.author.id})`);
     return;
   }
 
@@ -126,19 +126,19 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 });
 
 client.on('guildMemberAdd', async(member) => {
-  await client.commands.each( async(command) => {
+  await Promise.all(client.commands.map( async(command) => {
     if (typeof command.onGuildMemberAdd === 'undefined') return;
     Logger.verbose(`Triggering onGuildMemberAdd on ${command.name}`);
     await command.onGuildMemberAdd(client, member);
-  });
+  }));
 });
 
 client.on('guildMemberRemove', async(member) => {
-  await client.commands.each( async(command) => {
+  await Promise.all(client.commands.map( async(command) => {
     if (typeof command.onGuildMemberRemove === 'undefined') return;
     Logger.verbose(`Triggering guildMemberRemove on ${command.name}`);
     await command.onGuildMemberRemove(client, member);
-  });
+  }));
 });
 
 client.on('guildMemberUpdate', (oldMember, newMember) => {

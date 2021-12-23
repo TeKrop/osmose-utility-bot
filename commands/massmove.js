@@ -41,18 +41,22 @@ module.exports = {
         return;
       }
       originChannel = commandAuthorChannel;
+      processedArgs[1] = processedArgs[0];
     } else {
       originChannelName = processedArgs[0].toLowerCase();
       originChannel = message.guild.channels.cache.find(channel => {
         return channel.isVoice() && channel.name.toLowerCase().includes(originChannelName);
-      });
+      }) || null;
     }
 
     // search destination channel
     destinationChannelName = processedArgs[1].toLowerCase();
     const destinationChannel = message.guild.channels.cache.find(channel => {
       return channel.isVoice() && channel.name.toLowerCase().includes(destinationChannelName);
-    });
+    }) || null;
+
+    Logger.verbose(originChannel);
+    Logger.verbose(destinationChannel);
 
     // if one of the two chans were not found...
     if (originChannel === null || destinationChannel === null) {
@@ -63,7 +67,7 @@ module.exports = {
       if (destinationChannel === null) {
         notFoundChansList.add(processedArgs[1]);
       }
-      notFoundChans = notFoundChansList.join(', ');
+      notFoundChans = Array.from(notFoundChansList).join(', ');
       Message.error(message.channel, {
         title: Constants.CHANNELS_NOT_FOUND_TITLE,
         description: Mustache.render(Constants.CHANNELS_NOT_FOUND_DESCRIPTION, {
@@ -94,12 +98,10 @@ module.exports = {
       return;
     }
 
-    Logger.info(`massmove - nb members to move : ${membersToMove.size}`);
-
     // move them to destination channel
     membersNotMoved = new Collection();
     membersMoved = new Collection();
-    await membersToMove.each( async(member) => {
+    await Promise.all(membersToMove.map( async(member) => {
       try {
         Logger.info(`massmove - moving ${member.displayName}...`);
         await member.voice.setChannel(destinationChannel);
@@ -114,7 +116,7 @@ module.exports = {
         });
         membersNotMoved.set(member.id, member);
       }
-    });
+    }));
 
     // if we didn't move any user, error message
     if (membersMoved.size === 0) {

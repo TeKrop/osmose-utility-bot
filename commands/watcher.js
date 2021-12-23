@@ -91,8 +91,10 @@ module.exports = {
     }
 
     Logger.info('watcher - Fetching guild invites...');
-    this.invites = await guild.invites.fetch();
-    Logger.verbose(`watcher - ${JSON.stringify(this.invites)}`);
+    guildInvites = await guild.invites.fetch();
+    this.invites = guildInvites.mapValues((invite, code) => {
+      return {code: code, uses: invite.uses, inviter: invite.inviter}
+    });
   },
   async onGuildMemberAdd(client, member) {
     // Don't notify for bots
@@ -100,27 +102,23 @@ module.exports = {
       return;
     }
 
-    const guild = client.guilds.cache.first();
-
+    // To compare, we need to load the updated invite list.
     Logger.info('watcher - An new user joined the server...');
+    const guild = client.guilds.cache.first();
+    updatedInvites = await guild.invites.fetch();
 
-    // To compare, we need to load the current invite list.
-    guildInvites = await guild.invites.fetch();
-    Logger.verbose(`watcher - ${JSON.stringify(guildInvites)}`);
+    Logger.verbose(`watcher - ${JSON.stringify(updatedInvites)}`);
+    Logger.verbose(`watcher - ${JSON.stringify(this.invites)}`);
 
-    // This is the *existing* invites for the guild.
-    const ei = this.invites;
-    // Update the cached invites for the guild.
-    this.invites = guildInvites;
     // Look through the invites, find the one for which the uses went up.
-    let invite = guildInvites.find(i => ei.has(i.code) && ei.get(i.code).uses < i.uses);
+    let invite = updatedInvites.find(i => this.invites.has(i.code) && this.invites.get(i.code).uses < i.uses);
 
     // Check if an invite existed before, but not anymore.
     // If this is the case, it's the one
     if (typeof invite === 'undefined') {
       Logger.info(`watcher - we must search in old invites which existed before but not anymore...`);
       // search for old invites which is not here anymore
-      const oldInvites = ei.filter(i => !guildInvites.has(i.code));
+      const oldInvites = this.invites.filter(i => !updatedInvites.has(i.code));
       // if we have only one invite, this is the one
       if (oldInvites.size === 1) {
         invite = oldInvites.first();
@@ -135,7 +133,7 @@ module.exports = {
     if (typeof invite === 'undefined') {
       Logger.warn(`watcher - we must search in new invites since last fetch...`);
       // search for new invites with at least one use
-      const newInvites = guildInvites.filter(i => !ei.has(i.code) && i.uses > 0);
+      const newInvites = updatedInvites.filter(i => !this.invites.has(i.code) && i.uses > 0);
       // if we have only one invite, this is the one
       if (newInvites.size === 1) {
         invite = newInvites.first();
@@ -171,6 +169,11 @@ module.exports = {
         userTag: member.user.tag,
         userOrigin,
       }),
+    });
+
+    // Update all invites for uses number update
+    this.invites = guildInvites.mapValues((invite, code) => {
+      return {code: code, uses: invite.uses, inviter: invite.inviter}
     });
   },
   async onGuildMemberRemove(client, member) {
@@ -316,7 +319,7 @@ module.exports = {
     }
     Logger.info(`watcher - Adding a new invite to the list (${invite.code})`);
     Logger.verbose(`watcher - ${JSON.stringify(invite)})`);
-    this.invites.set(invite.code, invite);
+    this.invites.set(invite.code, {code: invite.code, uses: invite.uses, inviter: invite.inviter});
   },
   onInviteDelete(client, invite) {
     // if the invite is not in the list, do nothing
