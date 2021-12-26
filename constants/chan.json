@@ -1,10 +1,8 @@
 {
     "PARENT_CATEGORY_NOT_FOUND": "Parent category not found for onBotReady...",
-    "INVALID_USERS_LIMIT_TITLE": "Limite max d'utilisateurs invalide",
-    "INVALID_USERS_LIMIT_DESCRIPTION": "La limite spécifiée est invalide : vous devez préciser un nombre entre 1 et 99 inclus",
+    "CHANNEL_CREATION_CONFIGURATION_ERROR_TITLE": "Erreur de configuration",
+    "CHANNEL_CREATION_CONFIGURATION_ERROR_DESCRIPTION": "Le bot n'est pas configuré correctement, contactez un admin...",
     "CHANNEL_LIMITED_TO_X_USERS": "Il est limité à {{{userLimit}}} utilisateurs en simultané.",
-    "CHANNEL_NAME_NOT_SPECIFIED_TITLE" : "Nom de channel non spécifié",
-    "CHANNEL_NAME_NOT_SPECIFIED_DESCRIPTION": "Vous devez spécifier un nom pour le nouveau channel à créer",
     "CHANNEL_NAME_TOO_LONG_TITLE": "Nom de channel incorrect",
     "CHANNEL_NAME_TOO_LONG_DESCRIPTION": "Le nom du nouveau channel doit comporter entre 1 et 100 caractères",
     "CHANNEL_LIMIT_RESTRICTION_TITLE": "Impossible de créer un nouveau chan, la limite autorisée a été atteinte",

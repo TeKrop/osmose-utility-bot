@@ -9,38 +9,42 @@ const Message = require('../services/message');
 
 module.exports = {
   name: 'massmove',
-  data: new SlashCommandBuilder()
-    .setName('massmove')
-    .setDescription('Déplacer massivement des utilisateurs d\'un channel vocal à un autre')
-    .setDefaultPermission(false)
-    .addSubcommand((subcommand) => subcommand
-      .setName('me')
-      .setDescription('Se déplacer avec les autres utilisateurs depuis son channel vocal actuel vers un autre')
-      .addChannelOption((option) => option.setName('destination_channel')
-        .setDescription('Le channel de destination')
-        .setRequired(true)))
-    .addSubcommand((subcommand) => subcommand
-      .setName('users')
-      .setDescription('Déplacer tous les utilisateurs d\'un channel vocal à un autre')
-      .addChannelOption((option) => option.setName('source_channel')
-        .setDescription('Le channel d\'origine')
-        .setRequired(true))
-      .addChannelOption((option) => option.setName('destination_channel')
-        .setDescription('Le channel de destination')
-        .setRequired(true))),
+  data: null,
   permissions: [],
+  computeData() {
+    this.data = new SlashCommandBuilder()
+      .setName('massmove')
+      .setDescription('Déplacer massivement des utilisateurs d\'un channel vocal à un autre')
+      .setDefaultPermission(false)
+      .addSubcommand((subcommand) => subcommand
+        .setName('me')
+        .setDescription('Se déplacer avec les autres utilisateurs depuis son channel vocal actuel vers un autre')
+        .addChannelOption((option) => option.setName('destination_channel')
+          .setDescription('Le channel de destination')
+          .addChannelType(Constants.ChannelTypes.GUILD_VOICE)
+          .setRequired(true)))
+      .addSubcommand((subcommand) => subcommand
+        .setName('users')
+        .setDescription('Déplacer tous les utilisateurs d\'un channel vocal à un autre')
+        .addChannelOption((option) => option.setName('source_channel')
+          .setDescription('Le channel d\'origine')
+          .addChannelType(Constants.ChannelTypes.GUILD_VOICE)
+          .setRequired(true))
+        .addChannelOption((option) => option.setName('destination_channel')
+          .setDescription('Le channel de destination')
+          .addChannelType(Constants.ChannelTypes.GUILD_VOICE)
+          .setRequired(true)));
+  },
   computePermissions() {
     const massmoveConfig = Config.commands.massmove;
-
     if (massmoveConfig.roles.length === 0) {
       return;
     }
-
-    for (var i = massmoveConfig.roles.length - 1; i >= 0; i--) {
+    for (const roleId of massmoveConfig.roles) {
       this.permissions.push({
-        id: massmoveConfig.roles[i],
+        id: roleId,
         type: Constants.ApplicationCommandPermissionTypes.ROLE,
-        permission: true
+        permission: true,
       });
     }
   },
@@ -59,20 +63,10 @@ module.exports = {
       }
       sourceChannel = commandAuthorChannel;
     } else {
-      sourceChannel = interaction.options.get('source_channel').channel;
+      sourceChannel = interaction.options.getChannel('source_channel');
     }
 
-    const destinationChannel = interaction.options.get('destination_channel').channel;
-
-    // if one of the two channels is not a voice channel, error
-    if (!sourceChannel.isVoice() || !destinationChannel.isVoice()) {
-      await Message.errorReply(interaction, {
-        title: MassmoveConstants.MUST_BE_VOICE_CHANNELS_TITLE,
-        description: MassmoveConstants.MUST_BE_VOICE_CHANNELS_DESCRIPTION,
-      });
-      Logger.warn('massmove - Origin and/or destination channel is not a voice channel');
-      return;
-    }
+    const destinationChannel = interaction.options.getChannel('destination_channel');
 
     // if same channels, don't do anything
     if (sourceChannel.id === destinationChannel.id) {
@@ -126,8 +120,8 @@ module.exports = {
     // if we didn't move some users, warning reply
     if (membersNotMoved.size > 0) {
       await Message.warnReply(interaction, {
-        title: MassmoveConstants.MASSMOVE_SOME_USERS_NOT_MOVED_ERROR_TITLE,
-        description: Mustache.render(MassmoveConstants.MASSMOVE_SOME_USERS_NOT_MOVED_ERROR_DESCRIPTION, {
+        title: MassmoveConstants.MASSMOVE_USERS_NOT_MOVED_ERROR_TITLE,
+        description: Mustache.render(MassmoveConstants.MASSMOVE_USERS_NOT_MOVED_ERROR_DESCRIPTION, {
           nbNotMovedUsers: membersNotMoved.size,
           pluralUsers: (membersNotMoved.size > 1 ? 's' : ''),
           notMovedUsers: membersNotMoved.map((member) => member.displayName).join(', '),

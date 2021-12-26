@@ -1,6 +1,7 @@
 const BOT_VERSION = '2.0';
 
 // Load some necessary files
+const fs = require('fs');
 const { Client, Collection, Intents } = require('discord.js');
 const Config = require('./config.json');
 
@@ -10,12 +11,7 @@ const Message = require('./services/message');
 const CustomStatus = require('./services/customStatus');
 
 // Commands
-const massmoveCommand = require('./commands/massmove');
-const watcherCommand = require('./commands/watcher');
-const abstractChanCommand = require('./commands/chan');
-
-const chanCommand = { ...abstractChanCommand, name: 'chan' };
-const owChanCommand = { ...abstractChanCommand, name: 'owchan' };
+const commandFiles = fs.readdirSync('./commands').filter((file) => file.endsWith('.js'));
 
 // Basic initialisation
 const intents = [
@@ -27,12 +23,11 @@ const intents = [
   Intents.FLAGS.GUILD_VOICE_STATES,
 ];
 const client = new Client({ intents });
-client.commands = new Collection([
-  [chanCommand.name, chanCommand],
-  [owChanCommand.name, owChanCommand],
-  [massmoveCommand.name, massmoveCommand],
-  [watcherCommand.name, watcherCommand],
-]);
+client.commands = new Collection();
+for (const file of commandFiles) {
+  const command = require(`./commands/${file}`);
+  client.commands.set(command.name, command);
+}
 
 // Events handlers
 client.once('ready', async () => {

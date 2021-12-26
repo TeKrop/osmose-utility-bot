@@ -1,170 +1,198 @@
 const emojiRegex = require('emoji-regex');
 const Mustache = require('mustache');
-const { Collection } = require('discord.js');
+const { Collection, Constants } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 const Config = require('../config.json');
-const Constants = require('../constants/chan.json');
+const ChanConstants = require('../constants/chan.json');
 const Logger = require('../services/logger');
 const Message = require('../services/message');
 
 module.exports = {
-  parentCategory: null,
-  timeoutValue: 86400000,
-  chanLimit: 0,
-  moveUserInCreatedChannel: false,
-  defaultChannelOptions: {},
-  createdChannels: new Collection(),
-  channelsTimeouts: new Collection(),
-  async onBotReady(client) {
-    const that = this;
-    const guild = client.guilds.cache.first();
-    const chanConfig = Config.commands[this.name];
+  name: 'chan',
+  categoriesConfig: new Collection(),
+  data: null,
+  permissions: [],
+  computeData() {
+    const slashCommand = new SlashCommandBuilder()
+      .setName('chan')
+      .setDescription('Créer un nouveau channel vocal au sein de la catégorie choisie')
+      .setDefaultPermission(false);
 
-    // determine parent category : if not in config, search
-    // for parent category of the targetted text channel
-    if (typeof chanConfig.parentCategory !== 'undefined') {
-      this.parentCategory = await guild.channels.fetch(chanConfig.parentCategory);
-    } else if (chanConfig.channel && chanConfig.channel.length > 0) {
-      const textChannel = await guild.channels.fetch(chanConfig.channel);
-      if (textChannel !== null) {
-        this.parentCategory = textChannel.parent;
+    slashCommand.addStringOption((option) => {
+      const chanConfig = Config.commands.chan;
+      const categoryOption = option.setName('category')
+        .setDescription('Catégorie de channel vocal à créer')
+        .setRequired(true);
+      for (const category of chanConfig.categories) {
+        categoryOption.addChoice(category.label, category.id);
       }
-    }
-
-    // if parent category not found, do nothing
-    if (this.parentCategory === null || this.parentCategory === undefined) {
-      Logger.error(`${this.name} - ${Constants.PARENT_CATEGORY_NOT_FOUND}`);
-      return;
-    }
-    Logger.verbose(`${this.name} - parentCategory = ${this.parentCategory}`);
-
-    // initialize configuration
-    if (typeof chanConfig.timeout !== 'undefined') {
-      this.timeoutValue = parseInt(chanConfig.timeout, 10);
-    }
-    Logger.verbose(`${this.name} - timeoutValue = ${this.timeoutValue}`);
-
-    if (typeof chanConfig.limit !== 'undefined') {
-      this.chanLimit = parseInt(chanConfig.limit, 10);
-    }
-    Logger.verbose(`${this.name} - chanLimit = ${this.chanLimit}`);
-
-    if (
-      typeof chanConfig.moveUserInCreatedChannel !== 'undefined'
-      && chanConfig.moveUserInCreatedChannel === true
-    ) {
-      this.moveUserInCreatedChannel = true;
-    }
-    Logger.verbose(`${this.name} - moveUserInCreatedChannel = ${JSON.stringify(this.moveUserInCreatedChannel)}`);
-
-    this.defaultChannelOptions = {
-      type: 'GUILD_VOICE',
-      bitrate: 64000, // default, in bps
-    };
-    if (typeof chanConfig.bitrate !== 'undefined') {
-      this.defaultChannelOptions.bitrate = parseInt(chanConfig.bitrate, 10);
-    }
-    if (this.defaultChannelOptions.bitrate < 8000) {
-      this.defaultChannelOptions.bitrate = 8000; // minimum required by Discord API
-    }
-
-    // put the same permissions as the parent category
-    this.defaultChannelOptions.parent = this.parentCategory;
-    this.defaultChannelOptions.permissionOverwrites = this
-      .parentCategory
-      .permissionOverwrites
-      .cache
-      .map(
-        (o) => o.toJSON(),
-      );
-
-    Logger.verbose(`${this.name} - defaultChannelOptions = ${JSON.stringify(this.defaultChannelOptions)}`);
-
-    // now, assemble a list of channels to check and put an immediate timer
-    let exceptionChannels = new Collection();
-    if (typeof chanConfig.exceptionChannels !== 'undefined') {
-      exceptionChannels = guild.channels.cache.filter((channel) => channel.isVoice()
-        && chanConfig.exceptionChannels.includes(channel.id));
-    }
-    Logger.verbose(`${this.name} - exceptionChannels : ${JSON.stringify(exceptionChannels)}`);
-
-    this.createdChannels = guild.channels.cache.filter((channel) => channel.isVoice()
-      && channel.parent.id === this.parentCategory.id
-      && !exceptionChannels.has(channel.id));
-
-    // if no previously created channels, nothing to do
-    if (this.createdChannels.size === 0) {
-      return;
-    }
-
-    Logger.info(`${this.name} - Some channels were created before relaunch, putting timeOut on them...`);
-
-    this.createdChannels.each((channel) => {
-      Logger.info(`${this.name} - adding channel ${channel.name} into list`);
-      // if currently no one in channel, put in timeout
-      if (channel.members.size !== 0) {
-        return;
-      }
-      // add the defined timeout for the operation...
-      Logger.info(`${this.name} - No one in channel ${channel.name}... Applying timeout with value ${that.timeoutValue} milliseconds...`);
-      that.channelsTimeouts.set(channel.id, setTimeout(
-        that.timeoutMethod,
-        that.timeoutValue,
-        that,
-        channel,
-      ));
+      return categoryOption;
     });
+
+    slashCommand.addStringOption((option) => option.setName('channel_name')
+      .setDescription('Le nom du nouveau channel')
+      .setRequired(true));
+
+    slashCommand.addIntegerOption((option) => option.setName('user_limit')
+      .setDescription('Nombre de personnes autorisées au maximum dans le channel. Par défaut il n\'y a aucune limite.')
+      .setMinValue(1)
+      .setMaxValue(99)
+      .setRequired(false));
+
+    this.data = slashCommand;
   },
-  async execute(client, message, args) {
-    const channelOptions = { ...this.defaultChannelOptions };
-
-    let channelName = args.split(' ');
-    let limitMessage = '';
-
-    if (!Number.isNaN(Number(channelName[0]))) {
-      const userLimit = parseInt(channelName.shift(), 10);
-      if (userLimit <= 0 || userLimit > 100) {
-        Message.error(message.channel, {
-          title: Constants.INVALID_USERS_LIMIT_TITLE,
-          description: Constants.INVALID_USERS_LIMIT_DESCRIPTION,
-        });
-        Logger.warn(`${this.name} - Invalid max limits specified`);
-        return;
-      }
-      channelOptions.userLimit = userLimit;
-      limitMessage += Mustache.render(Constants.CHANNEL_LIMITED_TO_X_USERS, { userLimit });
-    }
-    channelName = channelName.join(' ');
-
-    // check if we have a name for the new channel
-    if (!channelName.length) {
-      Message.error(message.channel, {
-        title: Constants.CHANNEL_NAME_NOT_SPECIFIED_TITLE,
-        description: Constants.CHANNEL_NAME_NOT_SPECIFIED_DESCRIPTION,
-      });
-      Logger.warn(`${this.name} - No channel name specificed`);
+  computePermissions() {
+    const chanConfig = Config.commands.chan;
+    if (chanConfig.roles.length === 0) {
       return;
+    }
+    for (const roleId of chanConfig.roles) {
+      this.permissions.push({
+        id: roleId,
+        type: Constants.ApplicationCommandPermissionTypes.ROLE,
+        permission: true,
+      });
+    }
+  },
+  async onBotReady(client) {
+    const guild = client.guilds.cache.first();
+    const chanConfig = Config.commands.chan;
+
+    for (const category of chanConfig.categories) {
+      const categoryConfig = {};
+
+      // Get parent category
+      let parentCategory = null;
+      if (typeof category.parentCategory !== 'undefined') {
+        parentCategory = await guild.channels.fetch(category.parentCategory);
+      }
+      if (parentCategory === null || parentCategory === undefined) {
+        Logger.error(`chan - ${category.id} - ${ChanConstants.PARENT_CATEGORY_NOT_FOUND}`);
+        continue;
+      }
+      categoryConfig.parentCategory = parentCategory;
+      Logger.verbose(`chan - ${category.id} - parentCategory = ${categoryConfig.parentCategory}`);
+
+      // initialize configuration
+      categoryConfig.timeoutValue = 86400000;
+      if (typeof category.timeout !== 'undefined') {
+        categoryConfig.timeoutValue = parseInt(category.timeout, 10);
+      }
+      Logger.verbose(`chan - ${category.id} - timeoutValue = ${categoryConfig.timeoutValue}`);
+
+      categoryConfig.chanLimit = 0;
+      if (typeof category.limit !== 'undefined') {
+        categoryConfig.chanLimit = parseInt(category.limit, 10);
+      }
+      Logger.verbose(`chan - ${category.id} - chanLimit = ${categoryConfig.chanLimit}`);
+
+      categoryConfig.moveUserInCreatedChannel = (
+        typeof category.moveUserInCreatedChannel !== 'undefined'
+        && category.moveUserInCreatedChannel === true
+      );
+      Logger.verbose(`chan - ${category.id} - moveUserInCreatedChannel = ${JSON.stringify(categoryConfig.moveUserInCreatedChannel)}`);
+
+      categoryConfig.defaultChannelOptions = {
+        type: Constants.ChannelTypes.GUILD_VOICE,
+        bitrate: 64000, // default, in bps
+      };
+      if (typeof category.bitrate !== 'undefined') {
+        categoryConfig.defaultChannelOptions.bitrate = parseInt(category.bitrate, 10);
+      }
+      if (categoryConfig.defaultChannelOptions.bitrate < 8000) {
+        categoryConfig.defaultChannelOptions.bitrate = 8000; // minimum required by Discord API
+      }
+
+      // put the same permissions as the parent category
+      categoryConfig.defaultChannelOptions.parent = categoryConfig.parentCategory;
+      categoryConfig.defaultChannelOptions.permissionOverwrites = categoryConfig
+        .parentCategory
+        .permissionOverwrites
+        .cache
+        .map(
+          (o) => o.toJSON(),
+        );
+      Logger.verbose(`chan - defaultChannelOptions = ${JSON.stringify(categoryConfig.defaultChannelOptions)}`);
+      // now, assemble a list of channels to check and put an immediate timer
+      let exceptionChannels = new Collection();
+      if (typeof category.exceptionChannels !== 'undefined') {
+        exceptionChannels = guild.channels.cache.filter((channel) => channel.isVoice()
+          && category.exceptionChannels.includes(channel.id));
+      }
+      Logger.verbose(`chan - exceptionChannels : ${JSON.stringify(exceptionChannels)}`);
+
+      categoryConfig.createdChannels = guild.channels.cache.filter((channel) => channel.isVoice()
+        && channel.parent.id === categoryConfig.parentCategory.id
+        && !exceptionChannels.has(channel.id));
+
+      // if previously created channels, add timeout for them
+      categoryConfig.channelsTimeouts = new Collection();
+      if (categoryConfig.createdChannels.size > 0) {
+        Logger.info('chan - Some channels were created before relaunch, putting timeOut on them...');
+        categoryConfig.createdChannels.each((channel) => {
+          Logger.info(`chan - adding channel ${channel.name} into list`);
+          // if currently no one in channel, put in timeout
+          if (channel.members.size !== 0) {
+            return;
+          }
+          // add the defined timeout for the operation...
+          Logger.info(`chan - No one in channel ${channel.name}... Applying timeout with value ${categoryConfig.timeoutValue} milliseconds...`);
+          categoryConfig.channelsTimeouts.set(channel.id, setTimeout(
+            this.timeoutMethod,
+            categoryConfig.timeoutValue,
+            categoryConfig,
+            channel,
+          ));
+        });
+      }
+      this.categoriesConfig.set(category.id, categoryConfig);
+    }
+  },
+  async execute(interaction) {
+    const category = interaction.options.getString('category');
+    if (!this.categoriesConfig.has(category)) {
+      await Message.errorReply(interaction, {
+        title: ChanConstants.CHANNEL_CREATION_CONFIGURATION_ERROR_TITLE,
+        description: ChanConstants.CHANNEL_CREATION_CONFIGURATION_ERROR_DESCRIPTION,
+      });
+      Logger.error('chan - Invalid configuration');
+      return;
+    }
+
+    const categoryConfig = this.categoriesConfig.get(category);
+
+    // check if we have a limit of number of created chans
+    if (
+      categoryConfig.chanLimit > 0
+      && categoryConfig.createdChannels.size >= categoryConfig.chanLimit
+    ) {
+      await Message.errorReply(interaction, {
+        title: ChanConstants.CHANNEL_LIMIT_RESTRICTION_TITLE,
+        description: Mustache.render(ChanConstants.CHANNEL_LIMIT_RESTRICTION_DESCRIPTION, {
+          chanLimit: categoryConfig.chanLimit,
+        }),
+      });
+      Logger.warn('chan - Max channels limit has been reached');
+      return;
+    }
+
+    let limitMessage = '';
+    const channelOptions = { ...categoryConfig.defaultChannelOptions };
+    const userLimit = interaction.options.getInteger('user_limit');
+    if (userLimit !== null) {
+      channelOptions.userLimit = userLimit;
+      limitMessage = Mustache.render(ChanConstants.CHANNEL_LIMITED_TO_X_USERS, { userLimit });
     }
 
     // check if the name is between 1 and 100 characters
+    let channelName = interaction.options.getString('channel_name');
     if (channelName.length > 100) {
-      Message.error(message.channel, {
-        title: Constants.CHANNEL_NAME_TOO_LONG_TITLE,
-        description: Constants.CHANNEL_NAME_TOO_LONG_DESCRIPTION,
+      await Message.errorReply(interaction, {
+        title: ChanConstants.CHANNEL_NAME_TOO_LONG_TITLE,
+        description: ChanConstants.CHANNEL_NAME_TOO_LONG_DESCRIPTION,
       });
-      Logger.warn(`${this.name} - Channel name is too long`);
-      return;
-    }
-
-    // check if we have a limit of number of created chans
-    if (this.chanLimit > 0 && this.createdChannels.size >= this.chanLimit) {
-      Message.error(message.channel, {
-        title: Constants.CHANNEL_LIMIT_RESTRICTION_TITLE,
-        description: Mustache.render(Constants.CHANNEL_LIMIT_RESTRICTION_DESCRIPTION, {
-          chanLimit: this.chanLimit,
-        }),
-      });
-      Logger.warn(`${this.name} - Max channels limit has been reached`);
+      Logger.warn('chan - Channel name is too long');
       return;
     }
 
@@ -177,57 +205,56 @@ module.exports = {
     }
 
     // create the channel
-    Logger.info(`${this.name} - Creating channel "${channelName}" in category "${this.parentCategory.name}"...`);
-    Logger.verbose(`${this.name} - ${JSON.stringify(this.defaultChannelOptions)}`);
-    Logger.verbose(`${this.name} - ${JSON.stringify(channelOptions)}`);
+    Logger.info(`chan - Creating channel "${channelName}" in category "${categoryConfig.parentCategory.name}"...`);
+    Logger.verbose(`chan - ${JSON.stringify(channelOptions)}`);
 
     let newVoiceChannel = null;
     try {
-      newVoiceChannel = await message.guild.channels.create(channelName, channelOptions);
+      newVoiceChannel = await interaction.guild.channels.create(channelName, channelOptions);
     } catch (error) {
-      Logger.error(`${this.name} - ${error}`);
-      Message.error(message.channel, {
-        title: Constants.CHANNEL_CREATION_UNKNOWN_ERROR_TITLE,
-        description: Constants.CHANNEL_CREATION_UNKNOWN_ERROR_DESCRIPTION,
+      Logger.error(`chan - ${error}`);
+      await Message.errorReply(interaction, {
+        title: ChanConstants.CHANNEL_CREATION_UNKNOWN_ERROR_TITLE,
+        description: ChanConstants.CHANNEL_CREATION_UNKNOWN_ERROR_DESCRIPTION,
       });
       return;
     }
 
     // add to created channels array, in order to delete later (when no one left in the channel)
-    this.createdChannels.set(newVoiceChannel.id, newVoiceChannel);
+    categoryConfig.createdChannels.set(newVoiceChannel.id, newVoiceChannel);
 
     // if user is in voice chat, move him in the new created channel if we enabled the option
-    let successMessageTitle = Constants.CHANNEL_CREATED_TITLE;
-    let successMessageDescription = Constants.CHANNEL_CREATED_DESCRIPTION;
+    let successMessageTitle = ChanConstants.CHANNEL_CREATED_TITLE;
+    let successMessageDescription = ChanConstants.CHANNEL_CREATED_DESCRIPTION;
 
-    if (message.member.voice.channelId && this.moveUserInCreatedChannel) {
+    if (interaction.member.voice.channelId && categoryConfig.moveUserInCreatedChannel) {
       try {
-        await message.member.voice.setChannel(newVoiceChannel);
+        await interaction.member.voice.setChannel(newVoiceChannel);
       } catch (error) {
-        Logger.error(`${this.name} - ${error}`);
-        Message.warn(message.channel, {
-          title: Constants.CHANNEL_CREATED_BUT_MOVE_ERROR_TITLE,
-          description: Constants.CHANNEL_CREATED_BUT_MOVE_ERROR_DESCRIPTION,
+        Logger.error(`chan - ${error}`);
+        await Message.warnReply(interaction, {
+          title: ChanConstants.CHANNEL_CREATED_BUT_MOVE_ERROR_TITLE,
+          description: ChanConstants.CHANNEL_CREATED_BUT_MOVE_ERROR_DESCRIPTION,
         });
         return;
       }
 
-      successMessageTitle = Constants.CHANNEL_CREATED_AND_MOVED_TITLE;
-      successMessageDescription = Constants.CHANNEL_CREATED_AND_MOVED_DESCRIPTION;
+      successMessageTitle = ChanConstants.CHANNEL_CREATED_AND_MOVED_TITLE;
+      successMessageDescription = ChanConstants.CHANNEL_CREATED_AND_MOVED_DESCRIPTION;
     } else {
       // add the defined timeout for the operation...
-      Logger.info(`${this.name} - Since no one for the moment, applying timeout with value ${this.timeoutValue} milliseconds...`);
-      this.channelsTimeouts.set(newVoiceChannel.id, setTimeout(
+      Logger.info(`chan - Since no one for the moment, applying timeout with value ${categoryConfig.timeoutValue} milliseconds...`);
+      categoryConfig.channelsTimeouts.set(newVoiceChannel.id, setTimeout(
         this.timeoutMethod,
-        this.timeoutValue,
-        this,
+        categoryConfig.timeoutValue,
+        categoryConfig,
         newVoiceChannel,
       ));
     }
 
     // display success message
-    Logger.info(`${this.name} - Channel has been successfully created !`);
-    Message.success(message.channel, {
+    Logger.info('chan - Channel has been successfully created !');
+    await Message.successReply(interaction, {
       title: successMessageTitle,
       description: Mustache.render(successMessageDescription, {
         newVoiceChannelName: newVoiceChannel.name,
@@ -242,7 +269,7 @@ module.exports = {
 
     const oldChannelName = (oldUserChannel !== null) ? `${oldUserChannel.id} (${oldUserChannel.name})` : '...';
     const newChannelName = (newUserChannel !== null) ? `${newUserChannel.id} (${newUserChannel.name})` : '...';
-    Logger.verbose(`${this.name} - ${oldChannelName} => ${newChannelName}`);
+    Logger.verbose(`chan - ${oldChannelName} => ${newChannelName}`);
 
     // do nothing if same channel (voiceUpdate = mic)
     if (
@@ -256,39 +283,45 @@ module.exports = {
     // if user leaved a channel, check if this is one created dynamically.
     // if no one left, apply timeout for deletion
     // check if we have a list of created channels
-    if (oldUserChannel !== null && this.createdChannels.size > 0) {
-      // check if oldUserChannel is in list of created channels
-      // and if there is no one left in the channel
-      if (this.createdChannels.has(oldUserChannel.id) && (oldUserChannel.members.size === 0)) {
+    if (oldUserChannel !== null) {
+      this.categoriesConfig.each((categoryConfig) => {
+        if (
+          (!categoryConfig.createdChannels.has(oldUserChannel.id))
+          || (oldUserChannel.members.size > 0)
+        ) {
+          return;
+        }
         // add the defined timeout for the operation...
-        Logger.info(`${this.name} - no one left in channel ${oldUserChannel.name}... Applying timeout with value ${this.timeoutValue} milliseconds...`);
-        this.channelsTimeouts.set(oldUserChannel.id, setTimeout(
+        Logger.info(`chan - no one left in channel ${oldUserChannel.name}... Applying timeout with value ${categoryConfig.timeoutValue} milliseconds...`);
+        categoryConfig.channelsTimeouts.set(oldUserChannel.id, setTimeout(
           this.timeoutMethod,
-          this.timeoutValue,
-          this,
+          categoryConfig.timeoutValue,
+          categoryConfig,
           oldUserChannel,
         ));
-      }
+      });
     }
 
     // if user joined a channel, check if this is a created channel
     if (newUserChannel !== null) {
-      // check if newUserChannel is in list of channels timeouts
-      if (!this.channelsTimeouts.has(newUserChannel.id)) return;
+      this.categoriesConfig.each((categoryConfig) => {
+        // check if newUserChannel is in list of channels timeouts
+        if (!categoryConfig.channelsTimeouts.has(newUserChannel.id)) return;
 
-      // we joined a channel that had a timeout, clear it
-      Logger.info(`${this.name} - someone joined channel ${newUserChannel.name} before end of timeout ! clear timeout...`);
-      clearTimeout(this.channelsTimeouts.get(newUserChannel.id));
-      this.channelsTimeouts.delete(newUserChannel.id);
+        // we joined a channel that had a timeout, clear it
+        Logger.info(`chan - someone joined channel ${newUserChannel.name} before end of timeout ! clear timeout...`);
+        clearTimeout(categoryConfig.channelsTimeouts.get(newUserChannel.id));
+        categoryConfig.channelsTimeouts.delete(newUserChannel.id);
+      });
     }
   },
-  timeoutMethod(context, userChannel) {
+  timeoutMethod(categoryConfig, userChannel) {
     // now delete the channel from the created channels, the channels timeouts and the server
-    Logger.info(`${context.name} - timeout for channel ${userChannel.name} reached ! Deleting it...`);
-    context.createdChannels.delete(userChannel.id);
-    context.channelsTimeouts.delete(userChannel.id);
+    Logger.info(`chan - timeout for channel ${userChannel.name} reached ! Deleting it...`);
+    categoryConfig.createdChannels.delete(userChannel.id);
+    categoryConfig.channelsTimeouts.delete(userChannel.id);
 
     userChannel.delete()
-      .catch((error) => Logger.error(`${context.name} - ${error}`));
+      .catch((error) => Logger.error(`${error}`));
   },
 };

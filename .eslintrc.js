@@ -11,5 +11,10 @@ module.exports = {
     ecmaVersion: 12,
   },
   rules: {
+    'import/no-dynamic-require': 'off',
+    'global-require': 'off',
+    'no-restricted-syntax': 'off',
+    'no-continue': 'off',
+    'no-await-in-loop': 'off',
   },
 };
