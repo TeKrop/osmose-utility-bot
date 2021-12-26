@@ -1,7 +1,7 @@
-const BOT_VERSION = '1.1.0';
+const BOT_VERSION = '2.0';
 
 // Load some necessary files
-const Discord = require('discord.js');
+const { Client, Collection, Intents } = require('discord.js');
 const Config = require('./config.json');
 
 const Constants = require('./constants/index.json');
@@ -19,15 +19,15 @@ const owChanCommand = { ...abstractChanCommand, name: 'owchan' };
 
 // Basic initialisation
 const intents = [
-  Discord.Intents.FLAGS.GUILDS,
-  Discord.Intents.FLAGS.GUILD_INVITES,
-  Discord.Intents.FLAGS.GUILD_MESSAGES,
-  Discord.Intents.FLAGS.GUILD_MEMBERS,
-  Discord.Intents.FLAGS.GUILD_PRESENCES,
-  Discord.Intents.FLAGS.GUILD_VOICE_STATES,
+  Intents.FLAGS.GUILDS,
+  Intents.FLAGS.GUILD_INVITES,
+  Intents.FLAGS.GUILD_MESSAGES,
+  Intents.FLAGS.GUILD_MEMBERS,
+  Intents.FLAGS.GUILD_PRESENCES,
+  Intents.FLAGS.GUILD_VOICE_STATES,
 ];
-const client = new Discord.Client({ intents });
-client.commands = new Discord.Collection([
+const client = new Client({ intents });
+client.commands = new Collection([
   [chanCommand.name, chanCommand],
   [owChanCommand.name, owChanCommand],
   [massmoveCommand.name, massmoveCommand],
@@ -50,70 +50,25 @@ client.once('ready', async () => {
   Logger.info(`Osmose Utility Bot is ready ! Version : ${BOT_VERSION}`);
 });
 
-client.on('messageCreate', async (message) => {
-  // don't need to analyze bot messages
-  if (message.author.bot) return;
-
-  // retrieve args and command
-  const args = message.content.trim().slice(Config.prefix.length).split(/ +/);
-  const commandName = args.shift().toLowerCase();
-  if (
-    (!client.commands.has(commandName))
-    || (Object.keys(Config.commands).indexOf(commandName) === -1)
-  ) {
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isCommand()) {
     return;
   }
 
-  const command = client.commands.get(commandName);
-  const commandConfig = Config.commands[commandName];
-
-  // if no channel in config, not any usable command
-  if (typeof commandConfig.channel === 'undefined') {
-    return;
-  }
-
-  // check if the command has been called in the specific channel specified
-  let botChannel = null;
-  if (commandConfig.channel && commandConfig.channel.length > 0) {
-    botChannel = message.guild.channels.cache.get(commandConfig.channel);
-  }
-
-  if (!botChannel) {
-    Message.error(message.channel, {
-      title: Constants.INVALID_CONFIGURATION_TITLE,
-      description: Constants.INVALID_CONFIGURATION_DESCRIPTION,
-    });
-    Logger.error('The bot is not configured correctly');
-    if (commandConfig.channel && commandConfig.channel.length > 0) {
-      Logger.error(`The "${commandConfig.channel}" chan can't be found`);
-    } else {
-      Logger.error('No chan in configuration');
-    }
-    return;
-  }
-
-  // stop if the message was written outside of
-  // bot specific channel (if any in the configuration file)
-  if (botChannel !== message.channel) {
-    Message.error(botChannel, {
-      title: Constants.WRONG_TEXT_CHANNEL_USED_TITLE,
-      tag: message.author.id,
-      description: Constants.WRONG_TEXT_CHANNEL_USED_DESCRIPTION,
-    });
-    Logger.error(`Wrong chan usage from ${message.author.username} (${message.author.id})`);
+  const command = client.commands.get(interaction.commandName);
+  if (!command) {
     return;
   }
 
   // run the command
   try {
-    Logger.info(`Executing "${command.name}" command from ${message.author.username} (${message.author.id})`);
-    await command.execute(client, message, args.join(' '));
+    Logger.info(`Executing "${command.name}" command from ${interaction.user.username} (${interaction.user.id})`);
+    await command.execute(interaction);
   } catch (error) {
-    Message.error(message.channel, {
+    await Message.errorReply(interaction, {
       title: Constants.UNKNOWN_ERROR_TITLE,
       description: Constants.UNKNOWN_ERROR_DESCRIPTION,
     });
-    Logger.error(error);
   }
 });
 

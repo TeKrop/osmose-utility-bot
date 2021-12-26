@@ -1,6 +1,8 @@
 {
     "prefix": "!",
     "token": "your-bot-token-goes-here",
+    "clientId": "your-client-id",
+    "guildId": "your-guild-id",
     "logger": {
         "enableLogs": true,
         "logLevel": "info",
@@ -10,7 +12,7 @@
     },
     "commands": {
         "chan": {
-            "channel": "123456789",
+            "roles": "123456789",
             "exceptionChannels": [
                 "123456789",
                 "987654321"
@@ -20,10 +22,10 @@
             "moveUserInCreatedChannel": false
         },
         "massmove": {
-            "channel": "123456789"
+            "roles": "123456789"
         },
         "owchan": {
-            "channel": "123456789",
+            "roles": "123456789",
             "parentCategory": "123456789",
             "timeout": 3600000,
             "bitrate": 64000,

@@ -1,8 +1,4 @@
 {
-    "INVALID_CONFIGURATION_TITLE": "Configuration invalide",
-    "INVALID_CONFIGURATION_DESCRIPTION": "Erreur de configuration, contactez un admin",
-    "WRONG_TEXT_CHANNEL_USED_TITLE": "Chan écrit utilisé incorrect",
-    "WRONG_TEXT_CHANNEL_USED_DESCRIPTION": "Si vous souhaitez utiliser cette commande, vous devez l'écrire dans ce channel !",
     "UNKNOWN_ERROR_TITLE": "Erreur inconnue",
     "UNKNOWN_ERROR_DESCRIPTION": "Une erreur s'est produite durant l'exécution de la commande ! Contactez un admin..."
 }
