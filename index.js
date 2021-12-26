@@ -46,20 +46,30 @@ client.once('ready', async () => {
 });
 
 client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isCommand()) {
-    return;
+  // Do some checks depending on the interaction type
+  let command = null;
+  if (interaction.isCommand()) {
+    command = client.commands.get(interaction.commandName);
+  } else if (interaction.isButton()) {
+    const commandName = interaction.customId.split('-')[0];
+    command = client.commands.get(commandName);
   }
 
-  const command = client.commands.get(interaction.commandName);
   if (!command) {
     return;
   }
 
   // run the command
   try {
-    Logger.info(`Executing "${command.name}" command from ${interaction.user.username} (${interaction.user.id})`);
-    await command.execute(interaction);
+    if (interaction.isCommand()) {
+      Logger.info(`Executing "${command.name}" command from ${interaction.user.username} (${interaction.user.id})`);
+      await command.execute(interaction);
+    } else if (interaction.isButton()) {
+      Logger.info(`Executing "${command.name}" button interaction from ${interaction.user.username} (${interaction.user.id})`);
+      await command.buttonExecute(interaction);
+    }
   } catch (error) {
+    Logger.error(error);
     await Message.errorReply(interaction, {
       title: Constants.UNKNOWN_ERROR_TITLE,
       description: Constants.UNKNOWN_ERROR_DESCRIPTION,

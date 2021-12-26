@@ -1,5 +1,4 @@
 {
-    "prefix": "!",
     "token": "your-bot-token-goes-here",
     "clientId": "your-client-id",
     "guildId": "your-guild-id",
@@ -12,24 +11,31 @@
     },
     "commands": {
         "chan": {
-            "roles": "123456789",
-            "exceptionChannels": [
-                "123456789",
-                "987654321"
+            "roles": ["123456789"],
+            "categories": [
+                {
+                    "id": "first-category",
+                    "label": "Category",
+                    "parentCategory": "123456789",
+                    "timeout": 10000,
+                    "bitrate": 64000,
+                    "randomEmoji": true
+                },
+                {
+                    "id": "second-category",
+                    "label": "Second Category",
+                    "parentCategory": "987654321",
+                    "exceptionChannels": [
+                        "123456789",
+                        "987654321"
+                    ],
+                    "timeout": 5000,
+                    "limit": 10
+                }
             ],
-            "timeout": 86400000,
-            "limit": 10,
-            "moveUserInCreatedChannel": false
         },
         "massmove": {
-            "roles": "123456789"
-        },
-        "owchan": {
-            "roles": "123456789",
-            "parentCategory": "123456789",
-            "timeout": 3600000,
-            "bitrate": 64000,
-            "moveUserInCreatedChannel": true
+            "roles": ["123456789", "987654321"]
         },
         "watcher": {
             "guildMemberRemoveChannel": "123456789",

@@ -3,6 +3,7 @@ const { Collection, Constants } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 const Config = require('../config.json');
+const ChanConstants = require('../constants/chan.json');
 const MassmoveConstants = require('../constants/massmove.json');
 const Logger = require('../services/logger');
 const Message = require('../services/message');
@@ -139,6 +140,62 @@ module.exports = {
         sourceChannel: sourceChannel.name,
         destinationChannel: destinationChannel.name,
       }),
+      buttons: [{
+        id: `massmove-joinChannel-${sourceChannel.id}`,
+        label: `Se connecter au channel "${sourceChannel.name}"`,
+      }, {
+        id: `massmove-joinChannel-${destinationChannel.id}`,
+        label: `Se connecter au channel "${destinationChannel.name}"`,
+      }],
+    });
+  },
+  async buttonExecute(interaction) {
+    if (!interaction.customId.startsWith('massmove-joinChannel-')) {
+      return;
+    }
+    const channelId = interaction.customId.split('-')[2];
+    Logger.info(`massmove - Trying to move user to chan ${channelId}...`);
+
+    // Check if the channel still exists
+    const destinationChannel = interaction.guild.channels.cache.get(channelId);
+    if (!destinationChannel || !destinationChannel.isVoice()) {
+      await Message.errorReply(interaction, {
+        title: ChanConstants.CHANNEL_JOIN_MISSING_ERROR_TITLE,
+        description: ChanConstants.CHANNEL_JOIN_MISSING_ERROR_DESCRIPTION,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    // Check if the user is already connected to voice
+    const commandAuthorChannel = interaction.member.voice.channel || null;
+
+    if (commandAuthorChannel === null) {
+      await Message.errorReply(interaction, {
+        title: ChanConstants.CHANNEL_JOIN_NOT_CONNECTED_TITLE,
+        description: ChanConstants.CHANNEL_JOIN_NOT_CONNECTED_DESCRIPTION,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    // Check if user is already in the destination channel
+    if (commandAuthorChannel.id === destinationChannel.id) {
+      await Message.warnReply(interaction, {
+        title: ChanConstants.CHANNEL_JOIN_ALREADY_IN_CHANNEL_TITLE,
+        description: ChanConstants.CHANNEL_JOIN_ALREADY_IN_CHANNEL_DESCRIPTION,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    // All good, let's go
+    await interaction.member.voice.setChannel(destinationChannel);
+
+    await Message.successReply(interaction, {
+      title: ChanConstants.CHANNEL_JOIN_SUCCESS_TITLE,
+      description: ChanConstants.CHANNEL_JOIN_SUCCESS_DESCRIPTION,
+      ephemeral: true,
     });
   },
 };

@@ -7,6 +7,7 @@ const Config = require('../config.json');
 const ChanConstants = require('../constants/chan.json');
 const Logger = require('../services/logger');
 const Message = require('../services/message');
+const { fillCollection } = require('../services/utils');
 
 module.exports = {
   name: 'chan',
@@ -87,11 +88,11 @@ module.exports = {
       }
       Logger.verbose(`chan - ${category.id} - chanLimit = ${categoryConfig.chanLimit}`);
 
-      categoryConfig.moveUserInCreatedChannel = (
-        typeof category.moveUserInCreatedChannel !== 'undefined'
-        && category.moveUserInCreatedChannel === true
-      );
-      Logger.verbose(`chan - ${category.id} - moveUserInCreatedChannel = ${JSON.stringify(categoryConfig.moveUserInCreatedChannel)}`);
+      categoryConfig.randomEmoji = false;
+      if (typeof category.randomEmoji !== 'undefined') {
+        categoryConfig.randomEmoji = category.randomEmoji;
+      }
+      Logger.verbose(`chan - ${category.id} - randomEmoji = ${JSON.stringify(categoryConfig.randomEmoji)}`);
 
       categoryConfig.defaultChannelOptions = {
         type: Constants.ChannelTypes.GUILD_VOICE,
@@ -114,6 +115,7 @@ module.exports = {
           (o) => o.toJSON(),
         );
       Logger.verbose(`chan - defaultChannelOptions = ${JSON.stringify(categoryConfig.defaultChannelOptions)}`);
+
       // now, assemble a list of channels to check and put an immediate timer
       let exceptionChannels = new Collection();
       if (typeof category.exceptionChannels !== 'undefined') {
@@ -201,7 +203,35 @@ module.exports = {
     const chanStartsWithEmoji = channelName.match(emojiRegex());
     if (!chanStartsWithEmoji) {
       // add default emoji
-      channelName = `🎲 ${channelName}`;
+      let emoji = '🎲';
+
+      // if we want a random emoji, take from the list
+      if (categoryConfig.randomEmoji) {
+        const date = new Date();
+        const day = date.getDate();
+        const month = date.getMonth();
+
+        const emojis = new Collection();
+        if (month === 9 && day >= 15) { // Halloween
+          fillCollection(emojis, ['💀', '👽', '👻', '🧙', '🧛', '🧟', '🦇', '🦉', '🎃', '😈']);
+        } else if (month === 11) { // Christmas
+          fillCollection(emojis, ['🎅', '⛄', '🦌', '🎄', '🎁', '🧦', '👼']);
+        } else if (month === 3) {
+          if (day === 1) { // April Fools
+            fillCollection(emojis, ['🐟', '🎣', '🐠', '🐡', '🦈']);
+          } else { // Easter
+            fillCollection(emojis, ['🐰', '🐇', '🐣', '🥚', '🍫', '🎀', '🔔']);
+          }
+        } else if (month === 6 || month === 7) { // Summer
+          fillCollection(emojis, ['🌴', '🌞', '😎', '🏊', '🚵']);
+        } else { // Classic
+          fillCollection(emojis, ['🏓', '🧨', '💥', '💣']);
+        }
+
+        emoji = emojis.random();
+      }
+
+      channelName = `${emoji} ${channelName}`;
     }
 
     // create the channel
@@ -223,43 +253,77 @@ module.exports = {
     // add to created channels array, in order to delete later (when no one left in the channel)
     categoryConfig.createdChannels.set(newVoiceChannel.id, newVoiceChannel);
 
-    // if user is in voice chat, move him in the new created channel if we enabled the option
-    let successMessageTitle = ChanConstants.CHANNEL_CREATED_TITLE;
-    let successMessageDescription = ChanConstants.CHANNEL_CREATED_DESCRIPTION;
-
-    if (interaction.member.voice.channelId && categoryConfig.moveUserInCreatedChannel) {
-      try {
-        await interaction.member.voice.setChannel(newVoiceChannel);
-      } catch (error) {
-        Logger.error(`chan - ${error}`);
-        await Message.warnReply(interaction, {
-          title: ChanConstants.CHANNEL_CREATED_BUT_MOVE_ERROR_TITLE,
-          description: ChanConstants.CHANNEL_CREATED_BUT_MOVE_ERROR_DESCRIPTION,
-        });
-        return;
-      }
-
-      successMessageTitle = ChanConstants.CHANNEL_CREATED_AND_MOVED_TITLE;
-      successMessageDescription = ChanConstants.CHANNEL_CREATED_AND_MOVED_DESCRIPTION;
-    } else {
-      // add the defined timeout for the operation...
-      Logger.info(`chan - Since no one for the moment, applying timeout with value ${categoryConfig.timeoutValue} milliseconds...`);
-      categoryConfig.channelsTimeouts.set(newVoiceChannel.id, setTimeout(
-        this.timeoutMethod,
-        categoryConfig.timeoutValue,
-        categoryConfig,
-        newVoiceChannel,
-      ));
-    }
+    // add the defined timeout for the operation...
+    Logger.info(`chan - Since no one for the moment, applying timeout with value ${categoryConfig.timeoutValue} milliseconds...`);
+    categoryConfig.channelsTimeouts.set(newVoiceChannel.id, setTimeout(
+      this.timeoutMethod,
+      categoryConfig.timeoutValue,
+      categoryConfig,
+      newVoiceChannel,
+    ));
 
     // display success message
     Logger.info('chan - Channel has been successfully created !');
+
     await Message.successReply(interaction, {
-      title: successMessageTitle,
-      description: Mustache.render(successMessageDescription, {
+      title: ChanConstants.CHANNEL_CREATED_TITLE,
+      description: Mustache.render(ChanConstants.CHANNEL_CREATED_DESCRIPTION, {
         newVoiceChannelName: newVoiceChannel.name,
         limitMessage,
       }),
+      buttons: [{
+        id: `chan-joinCreatedChannel-${newVoiceChannel.id}`,
+        label: `Se connecter au channel "${newVoiceChannel.name}"`,
+      }],
+    });
+  },
+  async buttonExecute(interaction) {
+    if (!interaction.customId.startsWith('chan-joinCreatedChannel-')) {
+      return;
+    }
+    const channelId = interaction.customId.split('-')[2];
+    Logger.info(`chan - Trying to move user to chan ${channelId}...`);
+
+    // Check if the channel still exists
+    const destinationChannel = interaction.guild.channels.cache.get(channelId);
+    if (!destinationChannel || !destinationChannel.isVoice()) {
+      await Message.errorReply(interaction, {
+        title: ChanConstants.CHANNEL_JOIN_MISSING_ERROR_TITLE,
+        description: ChanConstants.CHANNEL_JOIN_MISSING_ERROR_DESCRIPTION,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    // Check if the user is already connected to voice
+    const commandAuthorChannel = interaction.member.voice.channel || null;
+
+    if (commandAuthorChannel === null) {
+      await Message.errorReply(interaction, {
+        title: ChanConstants.CHANNEL_JOIN_NOT_CONNECTED_TITLE,
+        description: ChanConstants.CHANNEL_JOIN_NOT_CONNECTED_DESCRIPTION,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    // Check if user is already in the destination channel
+    if (commandAuthorChannel.id === destinationChannel.id) {
+      await Message.warnReply(interaction, {
+        title: ChanConstants.CHANNEL_JOIN_ALREADY_IN_CHANNEL_TITLE,
+        description: ChanConstants.CHANNEL_JOIN_ALREADY_IN_CHANNEL_DESCRIPTION,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    // All good, let's go
+    await interaction.member.voice.setChannel(destinationChannel);
+
+    await Message.successReply(interaction, {
+      title: ChanConstants.CHANNEL_JOIN_SUCCESS_TITLE,
+      description: ChanConstants.CHANNEL_JOIN_SUCCESS_DESCRIPTION,
+      ephemeral: true,
     });
   },
   onVoiceStateUpdate(client, oldState, newState) {

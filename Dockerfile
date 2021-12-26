@@ -18,4 +18,5 @@ RUN cd /opt/ \
 RUN npm install -g nodemon
 
 WORKDIR /opt/osmose-utility-bot
-CMD ["nodemon", "index.js"]
+
+CMD ["bash", "app.sh"]

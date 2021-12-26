@@ -1,38 +1,84 @@
-const Discord = require('discord.js');
+const {
+  Constants, MessageActionRow, MessageButton, MessageEmbed,
+} = require('discord.js');
 const Mustache = require('mustache');
 
-const Constants = require('../constants/message.json');
+const MessageConstants = require('../constants/message.json');
 const Logger = require('./logger');
 
 module.exports = {
   getErrorData(data) {
     return Object.assign(data, {
-      title: Mustache.render(Constants.ERROR_MESSAGE, { title: data.title }),
-      color: 'DARK_RED',
+      title: Mustache.render(MessageConstants.ERROR_MESSAGE, { title: data.title }),
+      color: Constants.Colors.DARK_RED,
     });
   },
   getWarningdata(data) {
     return Object.assign(data, {
-      title: Mustache.render(Constants.WARNING_MESSAGE, { title: data.title }),
-      color: 'ORANGE',
+      title: Mustache.render(MessageConstants.WARNING_MESSAGE, { title: data.title }),
+      color: Constants.Colors.ORANGE,
     });
   },
   getInfoData(data) {
     return Object.assign(data, {
-      color: 'DARK_BLUE',
+      color: Constants.Colors.DARK_BLUE,
     });
   },
   getSuccessData(data) {
     return Object.assign(data, {
-      color: 'DARK_GREEN',
+      color: Constants.Colors.DARK_GREEN,
     });
   },
   getEmbedFromData(data) {
-    return new Discord.MessageEmbed()
+    const embed = new MessageEmbed()
       .setColor(data.color)
       .setTitle(data.title)
-      .setDescription(data.description)
-      .setURL(data.url ? data.url : '');
+      .setDescription(data.description);
+
+    if (data.url) {
+      embed.setURL(data.url);
+    }
+
+    return embed;
+  },
+  getButtonsFromData(data) {
+    if (!data.buttons) {
+      return null;
+    }
+
+    const buttons = [];
+
+    for (const dataButton of data.buttons) {
+      const button = new MessageButton()
+        .setCustomId(dataButton.id)
+        .setLabel(dataButton.label)
+        .setStyle(dataButton.style ? dataButton.style : Constants.MessageButtonStyles.PRIMARY)
+        .setEmoji(dataButton.emoji ? dataButton.emoji : '🔊');
+
+      if (typeof dataButton.disabled !== 'undefined') {
+        button.setDisabled(dataButton.disabled);
+      }
+      if (dataButton.url) {
+        button.setURL(dataButton.url);
+      }
+      buttons.push(button);
+    }
+
+    return buttons;
+  },
+  getMessageFromData(data) {
+    const replyMessage = {
+      embeds: [this.getEmbedFromData(data)],
+    };
+    const buttons = this.getButtonsFromData(data);
+    if (buttons) {
+      const row = new MessageActionRow().addComponents(buttons);
+      replyMessage.components = [row];
+    }
+    if (data.ephemeral) {
+      replyMessage.ephemeral = true;
+    }
+    return replyMessage;
   },
   error(channel, data) {
     return this.message(channel, this.getErrorData(data));
@@ -56,27 +102,27 @@ module.exports = {
     Logger.info(`message - ${data.title}`);
     Logger.info(`message - ${data.description}`);
 
-    return channel.send({ embeds: [this.getEmbedFromData(data)] });
+    return channel.send(this.getMessageFromData(data));
   },
   async errorReply(interaction, data) {
-    return await this.reply(interaction, this.getErrorData(data));
+    return this.reply(interaction, this.getErrorData(data));
   },
   async warnReply(interaction, data) {
-    return await this.reply(interaction, this.getWarningdata(data));
+    return this.reply(interaction, this.getWarningdata(data));
   },
   async infoReply(interaction, data) {
-    return await this.reply(interaction, this.getInfoData(data));
+    return this.reply(interaction, this.getInfoData(data));
   },
   async successReply(interaction, data) {
-    return await this.reply(interaction, this.getSuccessData(data));
+    return this.reply(interaction, this.getSuccessData(data));
   },
   async reply(interaction, data) {
-    Logger.verbose(`message - reply`);
+    Logger.verbose('message - reply');
     Logger.verbose(`message - ${JSON.stringify(data)}`);
 
     Logger.info(`message - ${data.title}`);
     Logger.info(`message - ${data.description}`);
 
-    return await interaction.reply({ embeds: [this.getEmbedFromData(data)] });
+    return interaction.reply(this.getMessageFromData(data));
   },
 };

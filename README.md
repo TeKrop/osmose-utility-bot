@@ -4,7 +4,7 @@
 [![Issues](https://img.shields.io/github/issues/TeKrop/osmose-utility-bot)](https://github.com/TeKrop/osmose-utility-bot/issues)
 [![License: MIT](https://img.shields.io/github/license/TeKrop/osmose-utility-bot)](https://github.com/TeKrop/osmose-utility-bot/blob/master/LICENSE)
 
-> Discord Bot made with Discord.js for Osmose Gaming Community. Using specific commands, users can dynamically create voice channels (`chan` and `owchan`), move people from one voice channel to another (`massmove`), send a message when a specific event is occuring (`watcher`), etc. Warning : it was designed to be used on only one guild (server) at a time.
+> Discord Bot made with Discord.js for Osmose Gaming Community. Using Slash commands, users can dynamically create voice channels (`/chan`), move people from one voice channel to another (`/massmove`), send a message when a specific event is occuring (`watcher`), etc. Warning : it was designed to be used on only one guild (server) at a time.
 
 ## Table of contents
 * [🛠️ Configuration](#%EF%B8%8F-configuration)
@@ -21,9 +21,10 @@ You can configure the application by copying the `config.example.json` and make 
 
 | Variable             | Default value                         | Description |
 | -------------        | -------------                         | ----------- |
-| **`prefix`***        | `'!'`                                 | Prefix to use for your command |
 | **`token`***         | `'your-bot-token-goes-here'`          | You must specify your bot token here |
-| **`logger`***        | `Array`                               | A list of configuration for logger |
+| **`clientId`***         | `'your-client-id'`          | The identifier of your application (Application ID) |
+| **`guildId`***         | `'your-guild-id'`          | The identifier of the guild you will use the bot on |
+| **`logger`***        | `{}`                               | A list of configuration for logger |
 | **`commands`***      | `Array`                               | A list of configuration for some commands |
 | **`customStatus`**   | `Array`                               | Configuration for Bot Discord status |
 
@@ -37,25 +38,26 @@ You can configure the application by copying the `config.example.json` and make 
 | **`zipLogs`**        | `true`                                | Whether or not the app should zip the logs when the day is over |
 
 ## ⌨️ Commands configuration
-4 commands are available now : **chan** for creating dynamic channels (simple), **owchan** for creating channels for our Overwatch section (automatic emojis), **massmove** for moving people from one voice channel to another, and **watcher** (no command to use, it's just watching events and sending some messages in various channels accordingly).
+2 commands are available now : **/chan** for creating dynamic channels, **/massmove** for moving people from one voice channel to another. For the **watcher** module, there is not command to use, it's just watching events and sending some messages in various channels accordingly.
 
 ### 🎤 Voice channels creation
 
 | Variable                        | Default value                         | Description |
 | -------------                   | -------------                         | ----------- |
-| **`channel`***                  | `undefined`                           | Identifier of the text channel in which you write the command |
-| **`parentCategory`**            | `null`                           | Identifier of parent category for channels to create. Default is the same category as the command in which you write the command.            |
-| **`exceptionChannels`**         | `[]`                                  | List of channels identifiers which are in the category but should not be removed automatically by the bot |
-| **`timeout`**                   | `86400000`                            | Number of milliseconds before removing the voice channel after no one has been in it (default : one day) |
-| **`bitrate`**                   | `64000`                           | Bitrate to put on the voice channel. If not specified, will be 64000 (64kbps). |
-| **`limit`**                     | `0`                           | Limit of simultaneous channels created by the command. Default is unlimited. |
-| **`moveUserInCreatedChannel`**  | `false`                               | Whether or not the command should move the user into the new created voice channel immediatly. Default is false. |
+| **`roles`***                  | `[]`                           | Array of roles identifiers which will be authorized to use the command |
+| **`categories`***            | `[]`                           | Identifier of parent category for channels to create. Default is the same category as the command in which you write the command.            |
+| **`categories[].parentCategory`***            | `undefined`                           | Identifier of parent category for channels to create.           |
+| **`categories[].exceptionChannels`**         | `[]`                                  | List of channels identifiers which are in the category but should not be removed automatically by the bot |
+| **`categories[].timeout`**                   | `86400000`                            | Number of milliseconds before removing the voice channel after no one has been in it (default : one day) |
+| **`categories[].bitrate`**                   | `64000`                           | Bitrate to put on the voice channel. If not specified, will be 64000 (64kbps). |
+| **`categories[].limit`**                     | `0`                           | Limit of simultaneous channels created by the command. Default is unlimited. |
+| **`categories[].randomEmoji`**                     | `false`                           | Whether or not you want to use random emojis depending on the period of the year as prefix for your voice channels. |
+
 
 ### 🚅 Massmove
 | Variable                   | Default value                         | Description |
 | -------------              | -------------                         | ----------- |
-| **`channel`***             | `undefined`                           | Identifier of the text channel the bot will listen to commands and send messages. Any user who has access to the text channel will be able to do a massmove command |
-| **`currentChannelAlias`**  | `'here'`                              | Alias for current channel of connected user when executing the command |
+| **`roles`***                  | `[]`                           | Array of roles identifiers which will be authorized to use the command |
 
 ### 👀 Watcher
 | Variable                       | Default value                         | Description |
@@ -89,6 +91,7 @@ Custom status module is used to put funny random statuses on the bot : watching 
 
 ```sh
 npm install
+node deploy-commands.js
 node index.js
 ```
 ## 👨‍💻 Technical details
@@ -103,7 +106,7 @@ Feel free to check [issues page](https://github.com/TeKrop/osmose-utility-bot/is
 
 ## 📝 License
 
-Copyright © 2019-2020 [Valentin PORCHET](https://github.com/TeKrop).
+Copyright © 2019-2021 [Valentin PORCHET](https://github.com/TeKrop).
 
 This project is [MIT](https://github.com/TeKrop/osmose-utility-bot/blob/master/LICENSE) licensed.
 
