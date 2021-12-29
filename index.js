@@ -1,4 +1,4 @@
-const BOT_VERSION = '2.0';
+const BOT_VERSION = '2.0.1';
 
 // Load some necessary files
 const fs = require('fs');

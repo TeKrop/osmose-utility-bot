@@ -1,6 +1,6 @@
 {
   "name": "osmose-utility-bot",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Osmose Utility Bot",
   "main": "index.js",
   "scripts": {

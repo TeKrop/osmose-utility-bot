@@ -73,11 +73,12 @@ module.exports = {
     // construct members list and admin list
     const adminsList = guildMembers.filter((member) => (
       member.roles.cache.has(this.adminRole)
-    ));
+    )).mapValues((member) => member.displayName);
+
     const membersList = guildMembers.filter((member) => (
       !member.roles.cache.has(this.adminRole)
-        && member.roles.cache.hasAny(this.acceptedMembersRoles)
-    ));
+        && member.roles.cache.hasAny(...this.acceptedMembersRoles.values())
+    )).mapValues((member) => member.displayName);
 
     // create a random status
     const category = this.categories.random();
