@@ -12,6 +12,7 @@
 * [⌨️ Commands configuration](#%EF%B8%8F-commands-configuration)
 * [💬 Custom status configuration](#-custom-status-configuration)
 * [💽 Installation](#-installation)
+* [🐋 Docker](#-docker)
 * [👨‍💻 Technical details](#-technical-details)
 * [🤝 Contributing](#-contributing)
 * [📝 License](#-license)
@@ -94,6 +95,23 @@ npm install
 node deploy-commands.js
 node index.js
 ```
+
+## 🐋 Docker
+
+### Build
+```
+docker build https://github.com/TeKrop/osmose-utility-bot.git#main -t tekrop/osmose-utility-bot:latest
+```
+### Run
+```
+OUB_DOCKER_PATH="/opt/osmose-utility-bot"
+docker run -d \
+	--name osmose-utility-bot \
+	--volume /local_path_to_logs:${OUB_DOCKER_PATH}/logs \
+	--volume /local_path_to_config.json:${OUB_DOCKER_PATH}/config.json \
+	tekrop/osmose-utility-bot
+```
+
 ## 👨‍💻 Technical details
 
 For code syntax and style, I'm using **Airbnb JS Style Guide** (https://github.com/airbnb/javascript). I'm using **Discord.js** library, **emoji-regex** in order to be able to parse emojis, **mustache** for simple templating when displaying messages, and **winston** for logging.
