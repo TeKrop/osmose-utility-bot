@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 
 # Navigate into the osmose utility bot directory
-cd /opt/osmose-utility-bot
+cd /code
 
 # Update Slash commands on the guild
 node deploy-commands.js

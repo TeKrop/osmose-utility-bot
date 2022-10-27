@@ -1,5 +1,5 @@
 const Mustache = require('mustache');
-const { Collection } = require('discord.js');
+const { ActivityType, Collection } = require('discord.js');
 
 const Config = require('../config.json');
 const Logger = require('./logger');
@@ -19,12 +19,29 @@ module.exports = {
       return;
     }
 
-    const possibleCategories = collectionFromArray(
-      ['LISTENING', 'WATCHING', 'PLAYING', 'STREAMING', 'COMPETING'],
-    );
+    const possibleCategories = collectionFromArray([
+      ActivityType.Listening,
+      ActivityType.Watching,
+      ActivityType.Playing,
+      ActivityType.Streaming,
+      ActivityType.Competing,
+    ]);
+    const categoriesMapping = {
+      [ActivityType.Listening]: 'LISTENING',
+      [ActivityType.Watching]: 'WATCHING',
+      [ActivityType.Playing]: 'PLAYING',
+      [ActivityType.Streaming]: 'STREAMING',
+      [ActivityType.Competing]: 'COMPETING',
+    };
+
     possibleCategories.each((category) => {
-      if (Config.customStatus.list[category] && Config.customStatus.list[category].length > 0) {
-        this.statusList[category] = collectionFromArray(Config.customStatus.list[category]);
+      if (
+        Config.customStatus.list[categoriesMapping[category]]
+        && Config.customStatus.list[categoriesMapping[category]].length > 0
+      ) {
+        this.statusList[category] = collectionFromArray(
+          Config.customStatus.list[categoriesMapping[category]],
+        );
       }
     });
 
@@ -110,6 +127,6 @@ module.exports = {
     }
 
     Logger.info(`customStatus - Setting new status for Discord Bot : category = "${category}" and status = "${status}"`);
-    client.user.setActivity(status, { type: category });
+    client.user.setActivity(status, { type: parseInt(category, 10) });
   },
 };

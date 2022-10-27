@@ -20,5 +20,9 @@
     "CHANNEL_JOIN_ALREADY_IN_CHANNEL_TITLE": "Déjà connecté",
     "CHANNEL_JOIN_ALREADY_IN_CHANNEL_DESCRIPTION": "Vous êtes déjà dans le channel vocal ciblé",
     "CHANNEL_JOIN_SUCCESS_TITLE": "Connexion réussie",
-    "CHANNEL_JOIN_SUCCESS_DESCRIPTION": "Vous avez rejoint le channel vocal avec succès"
+    "CHANNEL_JOIN_SUCCESS_DESCRIPTION": "Vous avez rejoint le channel vocal avec succès",
+    "CHANNEL_CREATION_COMMAND_DESCRIPTION": "Créer un nouveau channel vocal au sein de la catégorie choisie",
+    "CATEGORY_OPTION_DESCRIPTION": "Catégorie de channel vocal à créer",
+    "CHANNEL_NAME_OPTION_DESCRIPTION": "Le nom du nouveau channel",
+    "USER_LIMIT_OPTION_DESCRIPTION": "Nombre de personnes autorisées au maximum dans le channel. Par défaut il n'y a aucune limite."
 }

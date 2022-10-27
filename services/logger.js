@@ -38,4 +38,11 @@ if (Config.logger.enableLogs) {
   );
 }
 
+LoggerService.debug = LoggerService.debug.bind(LoggerService);
+LoggerService.info = LoggerService.info.bind(LoggerService);
+LoggerService.error = LoggerService.error.bind(LoggerService);
+LoggerService.warn = LoggerService.warn.bind(LoggerService);
+LoggerService.verbose = LoggerService.verbose.bind(LoggerService);
+LoggerService.silly = LoggerService.silly.bind(LoggerService);
+
 module.exports = LoggerService;

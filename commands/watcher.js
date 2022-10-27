@@ -1,5 +1,5 @@
 const Mustache = require('mustache');
-const { Collection } = require('discord.js');
+const { AuditLogEvent, Collection } = require('discord.js');
 
 const Config = require('../config.json');
 const Constants = require('../constants/watcher.json');
@@ -188,27 +188,35 @@ module.exports = {
     let messageTitle = Constants.USER_LEAVED_SERVER;
     let descriptions = this.memberLeavedMessages;
 
-    const audit = await guild.fetchAuditLogs();
-    const logs = audit.entries.filter((log) => log.target
-      && log.target.id === member.user.id
-      && log.actionType === 'DELETE');
-    if (logs.size > 0) {
-      const now = Date.now();
+    // Check if the user was kicked
+    const kickAudit = await guild.fetchAuditLogs({
+      limit: 1,
+      type: AuditLogEvent.MemberKick,
+    });
+    const kickLog = kickAudit.entries.first();
+    if (kickLog) {
+      const { executor, target } = kickLog;
+      if (target.id === member.id) {
+        messageTitle = Mustache.render(Constants.USER_WAS_KICKED_BY_USER, {
+          executor: executor.username,
+        });
+        descriptions = this.memberKickedMessages;
+      }
+    }
 
-      // check if we have at least one log in the last 5 seconds
-      const lastLog = logs.find((log) => log.createdTimestamp > (now - 5000));
-      if (typeof lastLog !== 'undefined') {
-        if (lastLog.action === 'MEMBER_KICK') {
-          messageTitle = Mustache.render(Constants.USER_WAS_KICKED_BY_USER, {
-            executor: lastLog.executor.username,
-          });
-          descriptions = this.memberKickedMessages;
-        } else if (lastLog.action === 'MEMBER_BAN_ADD') {
-          messageTitle = Mustache.render(Constants.USER_WAS_BANNED_BY_USER, {
-            executor: lastLog.executor.username,
-          });
-          descriptions = this.memberBannedMessages;
-        }
+    // Check if the user was banned
+    const banAudit = await guild.fetchAuditLogs({
+      limit: 1,
+      type: AuditLogEvent.MemberBanAdd,
+    });
+    const banLog = banAudit.entries.first();
+    if (banLog) {
+      const { executor, target } = banLog;
+      if (target.id === member.id) {
+        messageTitle = Mustache.render(Constants.USER_WAS_BANNED_BY_USER, {
+          executor: executor.username,
+        });
+        descriptions = this.memberBannedMessages;
       }
     }
 

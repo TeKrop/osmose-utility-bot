@@ -12,5 +12,10 @@
     "MASSMOVE_NOT_ANY_USER_MOVED_ERROR_TITLE": "Erreur pendant le déplacement des utilisateurs",
     "MASSMOVE_NOT_ANY_USER_MOVED_ERROR_DESCRIPTION": "Aucun utilisateur n'a pu être déplacé dans le channel de destination",
     "MASSMOVE_USERS_NOT_MOVED_ERROR_TITLE": "Certains utilisateurs n'ont pas été déplacés",
-    "MASSMOVE_USERS_NOT_MOVED_ERROR_DESCRIPTION": "{{{nbNotMovedUsers}}} utilisateur{{{pluralUsers}}} n'ont pas été déplacé{{{pluralUsers}}} : {{{notMovedUsers}}}"
+    "MASSMOVE_USERS_NOT_MOVED_ERROR_DESCRIPTION": "{{{nbNotMovedUsers}}} utilisateur{{{pluralUsers}}} n'ont pas été déplacé{{{pluralUsers}}} : {{{notMovedUsers}}}",
+    "MASSMOVE_COMMAND_DESCRIPTION": "Déplacer massivement des utilisateurs d'un channel vocal à un autre",
+    "MASSMOVE_ME_SUBCOMMAND_DESCRIPTION": "Se déplacer avec les autres utilisateurs depuis son channel vocal actuel vers un autre",
+    "MASSMOVE_USERS_SUBCOMMAND_DESCRIPTION": "Déplacer tous les utilisateurs d'un channel vocal à un autre",
+    "DESTINATION_CHANNEL_OPTION_DESCRIPTION": "Le channel de destination",
+    "SOURCE_CHANNEL_OPTION_DESCRIPTION": "Le channel d'origine"
 }

@@ -1,14 +1,14 @@
-FROM debian:bullseye
+FROM node:16-alpine
 
-CMD ["bash", "/opt/osmose-utility-bot/app.sh"]
+WORKDIR /code
 
-RUN apt update \
-    && apt install -y --no-install-recommends apt-transport-https apt-utils ca-certificates curl \
-    && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
-    && apt install -y --no-install-recommends nodejs build-essential git \
-    && cd /opt/ \
-    && git clone https://github.com/TeKrop/osmose-utility-bot.git \
-    && cd osmose-utility-bot \
-    && npm install \
-    && npm install -g nodemon \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}/ /tmp/* /var/tmp/*
+COPY index.js deploy-commands.js package.json app.sh /code/
+COPY ./commands /code/commands
+COPY ./constants /code/constants
+COPY ./services /code/services
+
+RUN cd /code && \
+    npm install --omit=dev && \
+    npm install -g nodemon
+
+CMD ["sh", "/code/app.sh"]

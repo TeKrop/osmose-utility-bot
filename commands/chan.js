@@ -1,7 +1,6 @@
 const emojiRegex = require('emoji-regex');
 const Mustache = require('mustache');
-const { Collection, Constants } = require('discord.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { ChannelType, Collection, SlashCommandBuilder } = require('discord.js');
 
 const Config = require('../config.json');
 const ChanConstants = require('../constants/chan.json');
@@ -13,48 +12,34 @@ module.exports = {
   name: 'chan',
   categoriesConfig: new Collection(),
   data: null,
-  permissions: [],
   computeData() {
     const slashCommand = new SlashCommandBuilder()
       .setName('chan')
-      .setDescription('Créer un nouveau channel vocal au sein de la catégorie choisie')
-      .setDefaultPermission(false);
+      .setDescription(ChanConstants.CHANNEL_CREATION_COMMAND_DESCRIPTION)
+      .setDefaultMemberPermissions(0);
 
     slashCommand.addStringOption((option) => {
-      const chanConfig = Config.commands.chan;
-      const categoryOption = option.setName('category')
-        .setDescription('Catégorie de channel vocal à créer')
-        .setRequired(true);
-      for (const category of chanConfig.categories) {
-        categoryOption.addChoice(category.label, category.id);
-      }
-      return categoryOption;
+      const categoryChoices = Config.commands.chan.categories.map(
+        ({ id, label }) => ({ name: label, value: id }),
+      );
+
+      return option.setName('category')
+        .setDescription(ChanConstants.CATEGORY_OPTION_DESCRIPTION)
+        .setRequired(true)
+        .addChoices(...categoryChoices);
     });
 
     slashCommand.addStringOption((option) => option.setName('channel_name')
-      .setDescription('Le nom du nouveau channel')
+      .setDescription(ChanConstants.CHANNEL_NAME_OPTION_DESCRIPTION)
       .setRequired(true));
 
     slashCommand.addIntegerOption((option) => option.setName('user_limit')
-      .setDescription('Nombre de personnes autorisées au maximum dans le channel. Par défaut il n\'y a aucune limite.')
+      .setDescription(ChanConstants.USER_LIMIT_OPTION_DESCRIPTION)
       .setMinValue(1)
       .setMaxValue(99)
       .setRequired(false));
 
     this.data = slashCommand;
-  },
-  computePermissions() {
-    const chanConfig = Config.commands.chan;
-    if (chanConfig.roles.length === 0) {
-      return;
-    }
-    for (const roleId of chanConfig.roles) {
-      this.permissions.push({
-        id: roleId,
-        type: Constants.ApplicationCommandPermissionTypes.ROLE,
-        permission: true,
-      });
-    }
   },
   async onBotReady(client) {
     const guild = client.guilds.cache.first();
@@ -95,7 +80,7 @@ module.exports = {
       Logger.verbose(`chan - ${category.id} - randomEmoji = ${JSON.stringify(categoryConfig.randomEmoji)}`);
 
       categoryConfig.defaultChannelOptions = {
-        type: Constants.ChannelTypes.GUILD_VOICE,
+        type: ChannelType.GuildVoice,
         bitrate: 64000, // default, in bps
       };
       if (typeof category.bitrate !== 'undefined') {
@@ -119,14 +104,18 @@ module.exports = {
       // now, assemble a list of channels to check and put an immediate timer
       let exceptionChannels = new Collection();
       if (typeof category.exceptionChannels !== 'undefined') {
-        exceptionChannels = guild.channels.cache.filter((channel) => channel.isVoice()
-          && category.exceptionChannels.includes(channel.id));
+        exceptionChannels = guild.channels.cache.filter(
+          (channel) => channel.type === ChannelType.GuildVoice
+          && category.exceptionChannels.includes(channel.id),
+        );
       }
       Logger.verbose(`chan - exceptionChannels : ${JSON.stringify(exceptionChannels)}`);
 
-      categoryConfig.createdChannels = guild.channels.cache.filter((channel) => channel.isVoice()
+      categoryConfig.createdChannels = guild.channels.cache.filter(
+        (channel) => channel.type === ChannelType.GuildVoice
         && channel.parent.id === categoryConfig.parentCategory.id
-        && !exceptionChannels.has(channel.id));
+        && !exceptionChannels.has(channel.id),
+      );
 
       // if previously created channels, add timeout for them
       categoryConfig.channelsTimeouts = new Collection();
@@ -233,6 +222,7 @@ module.exports = {
 
       channelName = `${emoji} ${channelName}`;
     }
+    channelOptions.name = channelName;
 
     // create the channel
     Logger.info(`chan - Creating channel "${channelName}" in category "${categoryConfig.parentCategory.name}"...`);
@@ -240,7 +230,7 @@ module.exports = {
 
     let newVoiceChannel = null;
     try {
-      newVoiceChannel = await interaction.guild.channels.create(channelName, channelOptions);
+      newVoiceChannel = await interaction.guild.channels.create(channelOptions);
     } catch (error) {
       Logger.error(`chan - ${error}`);
       await Message.errorReply(interaction, {
@@ -286,7 +276,7 @@ module.exports = {
 
     // Check if the channel still exists
     const destinationChannel = interaction.guild.channels.cache.get(channelId);
-    if (!destinationChannel || !destinationChannel.isVoice()) {
+    if (!destinationChannel || destinationChannel.type !== ChannelType.GuildVoice) {
       await Message.errorReply(interaction, {
         title: ChanConstants.CHANNEL_JOIN_MISSING_ERROR_TITLE,
         description: ChanConstants.CHANNEL_JOIN_MISSING_ERROR_DESCRIPTION,

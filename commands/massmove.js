@@ -1,8 +1,6 @@
 const Mustache = require('mustache');
-const { Collection, Constants } = require('discord.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { Collection, ChannelType, SlashCommandBuilder } = require('discord.js');
 
-const Config = require('../config.json');
 const ChanConstants = require('../constants/chan.json');
 const MassmoveConstants = require('../constants/massmove.json');
 const Logger = require('../services/logger');
@@ -11,43 +9,29 @@ const Message = require('../services/message');
 module.exports = {
   name: 'massmove',
   data: null,
-  permissions: [],
   computeData() {
     this.data = new SlashCommandBuilder()
       .setName('massmove')
-      .setDescription('Déplacer massivement des utilisateurs d\'un channel vocal à un autre')
-      .setDefaultPermission(false)
+      .setDescription(MassmoveConstants.MASSMOVE_COMMAND_DESCRIPTION)
+      .setDefaultMemberPermissions(0)
       .addSubcommand((subcommand) => subcommand
         .setName('me')
-        .setDescription('Se déplacer avec les autres utilisateurs depuis son channel vocal actuel vers un autre')
+        .setDescription(MassmoveConstants.MASSMOVE_ME_SUBCOMMAND_DESCRIPTION)
         .addChannelOption((option) => option.setName('destination_channel')
-          .setDescription('Le channel de destination')
-          .addChannelType(Constants.ChannelTypes.GUILD_VOICE)
+          .setDescription(MassmoveConstants.DESTINATION_CHANNEL_OPTION_DESCRIPTION)
+          .addChannelTypes(ChannelType.GuildVoice)
           .setRequired(true)))
       .addSubcommand((subcommand) => subcommand
         .setName('users')
-        .setDescription('Déplacer tous les utilisateurs d\'un channel vocal à un autre')
+        .setDescription(MassmoveConstants.MASSMOVE_USERS_SUBCOMMAND_DESCRIPTION)
         .addChannelOption((option) => option.setName('source_channel')
-          .setDescription('Le channel d\'origine')
-          .addChannelType(Constants.ChannelTypes.GUILD_VOICE)
+          .setDescription(MassmoveConstants.SOURCE_CHANNEL_OPTION_DESCRIPTION)
+          .addChannelTypes(ChannelType.GuildVoice)
           .setRequired(true))
         .addChannelOption((option) => option.setName('destination_channel')
-          .setDescription('Le channel de destination')
-          .addChannelType(Constants.ChannelTypes.GUILD_VOICE)
+          .setDescription(MassmoveConstants.DESTINATION_CHANNEL_OPTION_DESCRIPTION)
+          .addChannelTypes(ChannelType.GuildVoice)
           .setRequired(true)));
-  },
-  computePermissions() {
-    const massmoveConfig = Config.commands.massmove;
-    if (massmoveConfig.roles.length === 0) {
-      return;
-    }
-    for (const roleId of massmoveConfig.roles) {
-      this.permissions.push({
-        id: roleId,
-        type: Constants.ApplicationCommandPermissionTypes.ROLE,
-        permission: true,
-      });
-    }
   },
   async execute(interaction) {
     // Get source and destination channels depending on the options
@@ -158,7 +142,7 @@ module.exports = {
 
     // Check if the channel still exists
     const destinationChannel = interaction.guild.channels.cache.get(channelId);
-    if (!destinationChannel || !destinationChannel.isVoice()) {
+    if (!destinationChannel || destinationChannel.type !== ChannelType.GuildVoice) {
       await Message.errorReply(interaction, {
         title: ChanConstants.CHANNEL_JOIN_MISSING_ERROR_TITLE,
         description: ChanConstants.CHANNEL_JOIN_MISSING_ERROR_DESCRIPTION,

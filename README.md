@@ -45,7 +45,6 @@ You can configure the application by copying the `config.example.json` and make 
 
 | Variable                        | Default value                         | Description |
 | -------------                   | -------------                         | ----------- |
-| **`roles`***                  | `[]`                           | Array of roles identifiers which will be authorized to use the command |
 | **`categories`***            | `[]`                           | Identifier of parent category for channels to create. Default is the same category as the command in which you write the command.            |
 | **`categories[].parentCategory`***            | `undefined`                           | Identifier of parent category for channels to create.           |
 | **`categories[].exceptionChannels`**         | `[]`                                  | List of channels identifiers which are in the category but should not be removed automatically by the bot |
@@ -53,12 +52,6 @@ You can configure the application by copying the `config.example.json` and make 
 | **`categories[].bitrate`**                   | `64000`                           | Bitrate to put on the voice channel. If not specified, will be 64000 (64kbps). |
 | **`categories[].limit`**                     | `0`                           | Limit of simultaneous channels created by the command. Default is unlimited. |
 | **`categories[].randomEmoji`**                     | `false`                           | Whether or not you want to use random emojis depending on the period of the year as prefix for your voice channels. |
-
-
-### 🚅 Massmove
-| Variable                   | Default value                         | Description |
-| -------------              | -------------                         | ----------- |
-| **`roles`***                  | `[]`                           | Array of roles identifiers which will be authorized to use the command |
 
 ### 👀 Watcher
 | Variable                       | Default value                         | Description |
@@ -98,17 +91,17 @@ node index.js
 
 ## 🐋 Docker
 
-### Build
+### Compose
 ```
-docker build https://github.com/TeKrop/osmose-utility-bot.git#main -t tekrop/osmose-utility-bot:latest
+docker compose up -d
 ```
-### Run
+### Classic
 ```
-OUB_DOCKER_PATH="/opt/osmose-utility-bot"
+docker build . -t tekrop/osmose-utility-bot:latest
 docker run -d \
 	--name osmose-utility-bot \
-	--volume /local_path_to_logs:${OUB_DOCKER_PATH}/logs \
-	--volume /local_path_to_config.json:${OUB_DOCKER_PATH}/config.json \
+	--volume /local_path_to_logs:/code/logs \
+	--volume /local_path_to_config.json:/code/config.json \
 	tekrop/osmose-utility-bot
 ```
 
@@ -124,7 +117,7 @@ Feel free to check [issues page](https://github.com/TeKrop/osmose-utility-bot/is
 
 ## 📝 License
 
-Copyright © 2019-2021 [Valentin PORCHET](https://github.com/TeKrop).
+Copyright © 2019-2022 [Valentin PORCHET](https://github.com/TeKrop).
 
 This project is [MIT](https://github.com/TeKrop/osmose-utility-bot/blob/master/LICENSE) licensed.
 

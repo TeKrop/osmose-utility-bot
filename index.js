@@ -1,8 +1,10 @@
-const BOT_VERSION = '2.0.1';
+const BOT_VERSION = '2.1.0';
 
 // Load some necessary files
 const fs = require('fs');
-const { Client, Collection, Intents } = require('discord.js');
+const {
+  Client, Collection, Events, GatewayIntentBits,
+} = require('discord.js');
 const Config = require('./config.json');
 
 const Constants = require('./constants/index.json');
@@ -15,12 +17,12 @@ const commandFiles = fs.readdirSync('./commands').filter((file) => file.endsWith
 
 // Basic initialisation
 const intents = [
-  Intents.FLAGS.GUILDS,
-  Intents.FLAGS.GUILD_INVITES,
-  Intents.FLAGS.GUILD_MESSAGES,
-  Intents.FLAGS.GUILD_MEMBERS,
-  Intents.FLAGS.GUILD_PRESENCES,
-  Intents.FLAGS.GUILD_VOICE_STATES,
+  GatewayIntentBits.Guilds,
+  GatewayIntentBits.GuildInvites,
+  GatewayIntentBits.GuildMessages,
+  GatewayIntentBits.GuildMembers,
+  GatewayIntentBits.GuildPresences,
+  GatewayIntentBits.GuildVoiceStates,
 ];
 const client = new Client({ intents });
 client.commands = new Collection();
@@ -30,7 +32,7 @@ for (const file of commandFiles) {
 }
 
 // Events handlers
-client.once('ready', async () => {
+client.once(Events.ClientReady, async () => {
   // Initialize commands
   await Promise.all(client.commands.map(async (command) => {
     if (typeof command.onBotReady === 'undefined') return;
@@ -45,7 +47,7 @@ client.once('ready', async () => {
   Logger.info(`Osmose Utility Bot is ready ! Version : ${BOT_VERSION}`);
 });
 
-client.on('interactionCreate', async (interaction) => {
+client.on(Events.InteractionCreate, async (interaction) => {
   // Do some checks depending on the interaction type
   let command = null;
   if (interaction.isCommand()) {
@@ -61,7 +63,7 @@ client.on('interactionCreate', async (interaction) => {
 
   // run the command
   try {
-    if (interaction.isCommand()) {
+    if (interaction.isChatInputCommand()) {
       Logger.info(`Executing "${command.name}" command from ${interaction.user.username} (${interaction.user.id})`);
       await command.execute(interaction);
     } else if (interaction.isButton()) {
@@ -77,7 +79,7 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
-client.on('voiceStateUpdate', (oldState, newState) => {
+client.on(Events.VoiceStateUpdate, (oldState, newState) => {
   Logger.verbose('voiceStateUpdate event detected !');
   client.commands.each((command) => {
     if (typeof command.onVoiceStateUpdate === 'undefined') return;
@@ -86,7 +88,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
   });
 });
 
-client.on('guildMemberAdd', async (member) => {
+client.on(Events.GuildMemberAdd, async (member) => {
   await Promise.all(client.commands.map(async (command) => {
     if (typeof command.onGuildMemberAdd === 'undefined') return;
     Logger.verbose(`Triggering onGuildMemberAdd on ${command.name}`);
@@ -94,7 +96,7 @@ client.on('guildMemberAdd', async (member) => {
   }));
 });
 
-client.on('guildMemberRemove', async (member) => {
+client.on(Events.GuildMemberRemove, async (member) => {
   await Promise.all(client.commands.map(async (command) => {
     if (typeof command.onGuildMemberRemove === 'undefined') return;
     Logger.verbose(`Triggering guildMemberRemove on ${command.name}`);
@@ -102,7 +104,7 @@ client.on('guildMemberRemove', async (member) => {
   }));
 });
 
-client.on('guildMemberUpdate', (oldMember, newMember) => {
+client.on(Events.GuildMemberUpdate, (oldMember, newMember) => {
   client.commands.each((command) => {
     if (typeof command.onGuildMemberUpdate === 'undefined') return;
     Logger.verbose(`Triggering onGuildMemberUpdate on ${command.name}`);
@@ -110,7 +112,7 @@ client.on('guildMemberUpdate', (oldMember, newMember) => {
   });
 });
 
-client.on('userUpdate', (oldUser, newUser) => {
+client.on(Events.UserUpdate, (oldUser, newUser) => {
   client.commands.each((command) => {
     if (typeof command.onUserUpdate === 'undefined') return;
     Logger.verbose(`Triggering userUpdate on ${command.name}`);
@@ -118,7 +120,7 @@ client.on('userUpdate', (oldUser, newUser) => {
   });
 });
 
-client.on('inviteCreate', (invite) => {
+client.on(Events.InviteCreate, (invite) => {
   client.commands.each((command) => {
     if (typeof command.onInviteCreate === 'undefined') return;
     Logger.verbose(`Triggering inviteCreate on ${command.name}`);
@@ -126,7 +128,7 @@ client.on('inviteCreate', (invite) => {
   });
 });
 
-client.on('inviteDelete', (invite) => {
+client.on(Events.InviteDelete, (invite) => {
   client.commands.each((command) => {
     if (typeof command.onInviteDelete === 'undefined') return;
     Logger.verbose(`Triggering inviteDelete on ${command.name}`);
@@ -134,6 +136,6 @@ client.on('inviteDelete', (invite) => {
   });
 });
 
-client.on('error', Logger.error);
+client.on(Events.Error, Logger.error);
 
 client.login(Config.token);

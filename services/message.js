@@ -1,5 +1,5 @@
 const {
-  Constants, MessageActionRow, MessageButton, MessageEmbed,
+  ActionRowBuilder, ButtonBuilder, ButtonStyle, Colors, EmbedBuilder,
 } = require('discord.js');
 const Mustache = require('mustache');
 
@@ -10,27 +10,27 @@ module.exports = {
   getErrorData(data) {
     return Object.assign(data, {
       title: Mustache.render(MessageConstants.ERROR_MESSAGE, { title: data.title }),
-      color: Constants.Colors.DARK_RED,
+      color: Colors.DarkRed,
     });
   },
   getWarningdata(data) {
     return Object.assign(data, {
       title: Mustache.render(MessageConstants.WARNING_MESSAGE, { title: data.title }),
-      color: Constants.Colors.ORANGE,
+      color: Colors.Orange,
     });
   },
   getInfoData(data) {
     return Object.assign(data, {
-      color: Constants.Colors.DARK_BLUE,
+      color: Colors.DarkBlue,
     });
   },
   getSuccessData(data) {
     return Object.assign(data, {
-      color: Constants.Colors.DARK_GREEN,
+      color: Colors.DarkGreen,
     });
   },
   getEmbedFromData(data) {
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
       .setColor(data.color)
       .setTitle(data.title)
       .setDescription(data.description);
@@ -49,10 +49,10 @@ module.exports = {
     const buttons = [];
 
     for (const dataButton of data.buttons) {
-      const button = new MessageButton()
+      const button = new ButtonBuilder()
         .setCustomId(dataButton.id)
         .setLabel(dataButton.label)
-        .setStyle(dataButton.style ? dataButton.style : Constants.MessageButtonStyles.PRIMARY)
+        .setStyle(dataButton.style ? dataButton.style : ButtonStyle.Primary)
         .setEmoji(dataButton.emoji ? dataButton.emoji : '🔊');
 
       if (typeof dataButton.disabled !== 'undefined') {
@@ -72,7 +72,7 @@ module.exports = {
     };
     const buttons = this.getButtonsFromData(data);
     if (buttons) {
-      const row = new MessageActionRow().addComponents(buttons);
+      const row = new ActionRowBuilder().addComponents(buttons);
       replyMessage.components = [row];
     }
     if (data.ephemeral) {

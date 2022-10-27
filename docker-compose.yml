@@ -1,0 +1,7 @@
+version: "1.0"
+services:
+  node:
+    build: .
+    volumes:
+      - /opt/tekrop/osmose-utility-bot/logs:/code/logs
+      - /opt/tekrop/osmose-utility-bot/config.json:/code/config.json
