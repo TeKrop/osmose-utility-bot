@@ -7,8 +7,6 @@ COPY ./commands /code/commands
 COPY ./constants /code/constants
 COPY ./services /code/services
 
-RUN cd /code && \
-    npm install --omit=dev && \
-    npm install -g nodemon
+RUN cd /code && npm install --omit=dev
 
 CMD ["sh", "/code/app.sh"]

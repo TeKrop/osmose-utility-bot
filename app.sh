@@ -7,4 +7,4 @@ cd /code
 node deploy-commands.js
 
 # Launch the bot server
-nodemon index.js
+node index.js

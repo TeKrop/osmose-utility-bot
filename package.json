@@ -1,6 +1,6 @@
 {
   "name": "osmose-utility-bot",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Osmose Utility Bot",
   "main": "index.js",
   "scripts": {
@@ -9,8 +9,8 @@
   "author": "Valentin PORCHET",
   "license": "MIT",
   "dependencies": {
-    "discord-api-types": "^0.37.14",
-    "discord.js": "^14.6.0",
+    "discord-api-types": "^0.37.45",
+    "discord.js": "^14.11.0",
     "emoji-regex": "^10.2.1",
     "mustache": "^4.2.0",
     "winston": "^3.8.2",
