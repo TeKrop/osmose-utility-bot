@@ -2,7 +2,7 @@ FROM node:16-alpine
 
 WORKDIR /code
 
-COPY index.js deploy-commands.js package.json app.sh /code/
+COPY index.js deploy-commands.js package.json package-lock.json app.sh /code/
 COPY ./commands /code/commands
 COPY ./constants /code/constants
 COPY ./services /code/services
