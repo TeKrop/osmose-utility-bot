@@ -1,6 +1,6 @@
 {
   "name": "osmose-utility-bot",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Osmose Utility Bot",
   "main": "index.js",
   "scripts": {
@@ -9,16 +9,11 @@
   "author": "Valentin PORCHET",
   "license": "MIT",
   "dependencies": {
-    "discord-api-types": "^0.37.45",
-    "discord.js": "^14.11.0",
-    "emoji-regex": "^10.2.1",
+    "discord-api-types": "^0.38.41",
+    "discord.js": "^14.25.1",
+    "emoji-regex": "^10.6.0",
     "mustache": "^4.2.0",
-    "winston": "^3.8.2",
-    "winston-daily-rotate-file": "^4.7.1"
-  },
-  "devDependencies": {
-    "eslint": "^8.26.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.26.0"
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
   }
 }

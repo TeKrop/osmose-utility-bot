@@ -2,8 +2,8 @@ services:
   app:
     build: .
     volumes:
-      - /opt/tekrop/osmose-utility-bot/logs:/code/logs
-      - /opt/tekrop/osmose-utility-bot/config.json:/code/config.json
+      - ./logs:/code/logs
+      - ./config.json:/code/config.json
     healthcheck:
       test: ["CMD", "pgrep", "node"]
       start_period: 10s
